@@ -8,9 +8,7 @@ interface StockInRepository {
     suspend fun getById(id: Long): StockIn?
     suspend fun countByItemId(itemId: Long): Int
     suspend fun insert(stockIn: StockIn): Long
-    suspend fun insertAll(stockIns: List<StockIn>): List<Long>
     suspend fun update(stockIn: StockIn)
     suspend fun delete(stockIn: StockIn)
     suspend fun deleteByItemId(itemId: Long)
-    suspend fun deleteAll()
 }

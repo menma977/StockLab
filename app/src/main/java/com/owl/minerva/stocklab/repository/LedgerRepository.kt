@@ -8,9 +8,7 @@ interface LedgerRepository {
     suspend fun getById(id: Long): Ledger?
     suspend fun countByItemId(itemId: Long): Int
     suspend fun insert(ledger: Ledger): Long
-    suspend fun insertAll(ledgers: List<Ledger>): List<Long>
     suspend fun update(ledger: Ledger)
     suspend fun delete(ledger: Ledger)
     suspend fun deleteByItemId(itemId: Long)
-    suspend fun deleteAll()
 }

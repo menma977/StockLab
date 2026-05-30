@@ -321,7 +321,7 @@ fun HomeContainer(
                             onValueChange = {},
                             readOnly = true,
                             modifier = Modifier
-                                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                                 .fillMaxWidth(),
                             label = {
                                 Text(text = "Product")

@@ -58,9 +58,12 @@ import com.owl.minerva.stocklab.model.Ledger
 import com.owl.minerva.stocklab.model.Stock
 import com.owl.minerva.stocklab.model.StockIn
 import com.owl.minerva.stocklab.model.StockOut
+import com.owl.minerva.stocklab.service.AmountFormatService
 import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.MoneyFormatService
+import com.owl.minerva.stocklab.service.PricingService
 import com.owl.minerva.stocklab.ui.components.AdMobBanner
+import com.owl.minerva.stocklab.ui.components.MetricText
 import com.owl.minerva.stocklab.ui.components.ProfitBadge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import java.time.Instant
@@ -169,10 +172,10 @@ fun ProductShowContainer(
         CurrencySettingsStore(context).getCurrency()
     }
     var product by remember { mutableStateOf(previewProduct) }
-    var batchPage by remember { mutableStateOf(0) }
-    var ledgerPage by remember { mutableStateOf(0) }
-    var stockInPage by remember { mutableStateOf(0) }
-    var stockOutPage by remember { mutableStateOf(0) }
+    var batchPage by remember { mutableIntStateOf(0) }
+    var ledgerPage by remember { mutableIntStateOf(0) }
+    var stockInPage by remember { mutableIntStateOf(0) }
+    var stockOutPage by remember { mutableIntStateOf(0) }
     var refreshKey by remember { mutableIntStateOf(0) }
     val lifecycleOwner = context as? LifecycleOwner
 
@@ -377,7 +380,7 @@ private fun ProductDetailCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    DetailMetric(
+                    MetricText(
                         label = "Final Price",
                         value = product.finalPrice,
                     )
@@ -399,11 +402,11 @@ private fun ProductDetailCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                DetailMetric(
+                MetricText(
                     label = "Buy Price per Unit",
                     value = product.buyPrice,
                 )
-                DetailMetric(
+                MetricText(
                     label = "HPP per Unit",
                     value = product.hppPerUnit,
                     horizontalAlignment = Alignment.End,
@@ -414,11 +417,11 @@ private fun ProductDetailCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                DetailMetric(
+                MetricText(
                     label = "Net Income",
                     value = product.netIncome,
                 )
-                DetailMetric(
+                MetricText(
                     label = "Unit",
                     value = product.unit,
                     horizontalAlignment = Alignment.End,
@@ -480,7 +483,7 @@ private fun ProductDetailCard(
 
         RecordSection(
             title = "Ledger",
-            description = "Ledger rows connected to this product.",
+            description = "Ledger rows are connected to this product.",
             page = product.ledgers,
             onPageChange = onLedgerPageChange,
         )
@@ -530,31 +533,6 @@ private fun ProductEmptyDetail() {
             text = "Product detail is not available.",
             modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.bodyMedium,
-        )
-    }
-}
-
-@Composable
-private fun DetailMetric(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = horizontalAlignment,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -625,7 +603,7 @@ private fun Item.toProductShowUiState(
     stockOutTotal: Int,
     currency: AppCurrency,
 ): ProductShowUiState {
-    val finalPrice = calculateSellPrice(
+    val finalPrice = PricingService.calculateSellPrice(
         hppPerUnit = hppPerUnit,
         profitTakePercent = profitTakePercent,
     )
@@ -645,9 +623,9 @@ private fun Item.toProductShowUiState(
             ?.code
             ?.takeIf { code -> code.isNotBlank() }
             ?: "No active batch",
-        activeBatchStock = "${formatAmount(activeStock?.amount ?: 0.0)} ${unit.name}",
+        activeBatchStock = "${AmountFormatService.format(activeStock?.amount ?: 0.0)} ${unit.name}",
         totalBatchHpp = MoneyFormatService.format(totalBatchHpp, currency),
-        batchQuantity = "${formatAmount(activeStock?.amount ?: 0.0)} ${unit.name}",
+        batchQuantity = "${AmountFormatService.format(activeStock?.amount ?: 0.0)} ${unit.name}",
         batchHppPerUnit = MoneyFormatService.format(hppPerUnit, currency),
         templateCosts = templateCosts.map { cost ->
             ProductCostUiState(
@@ -693,7 +671,7 @@ private fun Item.toProductShowUiState(
                 ProductRecordUiState(
                     title = stockIn.code.ifBlank { "Stock In ${stockIn.id}" },
                     description = "Stock ID: ${stockIn.stockId} • ${formatTimestamp(stockIn.createdAt)}",
-                    trailing = "Amount: ${formatAmount(stockIn.amount)}",
+                    trailing = "Amount: ${AmountFormatService.format(stockIn.amount)}",
                 )
             },
             page = stockInPage,
@@ -704,20 +682,13 @@ private fun Item.toProductShowUiState(
                 ProductRecordUiState(
                     title = stockOut.code.ifBlank { "Stock Out ${stockOut.id}" },
                     description = "Stock ID: ${stockOut.stockId} • ${formatTimestamp(stockOut.createdAt)}",
-                    trailing = "Amount: ${formatAmount(stockOut.amount)}",
+                    trailing = "Amount: ${AmountFormatService.format(stockOut.amount)}",
                 )
             },
             page = stockOutPage,
             totalItems = stockOutTotal,
         ),
     )
-}
-
-private fun calculateSellPrice(
-    hppPerUnit: Double,
-    profitTakePercent: Double,
-): Double {
-    return hppPerUnit * (1.0 + profitTakePercent / 100.0)
 }
 
 @Composable
@@ -752,7 +723,7 @@ private fun DetailSection(
             ) {
                 if (costs.isEmpty()) {
                     Text(
-                        text = "No cost data available.",
+                        text = "No cost data is available.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -898,14 +869,6 @@ private fun RecordSection(
                 }
             }
         }
-    }
-}
-
-private fun formatAmount(value: Double): String {
-    return if (value % 1.0 == 0.0) {
-        value.toLong().toString()
-    } else {
-        value.toString()
     }
 }
 

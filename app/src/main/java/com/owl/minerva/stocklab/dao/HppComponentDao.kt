@@ -9,9 +9,6 @@ interface HppComponentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(hppComponent: HppComponent): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(hppComponents: List<HppComponent>): List<Long>
-
     @Update
     suspend fun update(hppComponent: HppComponent)
 
@@ -37,6 +34,4 @@ interface HppComponentDao {
     )
     suspend fun deleteByItemId(itemId: Long)
 
-    @Query("DELETE FROM hpp_component")
-    suspend fun deleteAll()
 }

@@ -1,5 +1,6 @@
 package com.owl.minerva.stocklab.ui.components
 
+import android.content.pm.ApplicationInfo
 import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -55,17 +56,19 @@ fun AdMobBanner(
             AdView(context).apply {
                 setAdSize(AdSize.BANNER)
                 adUnitId = BANNER_AD_UNIT_ID
-                adListener = object : AdListener() {
-                    override fun onAdLoaded() {
-                        Log.d(TAG, "Banner loaded for adUnitId=$adUnitId")
-                    }
+                if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+                    adListener = object : AdListener() {
+                        override fun onAdLoaded() {
+                            Log.d(TAG, "Banner loaded for adUnitId=$adUnitId")
+                        }
 
-                    override fun onAdFailedToLoad(adError: LoadAdError) {
-                        Log.e(
-                            TAG,
-                            "Banner failed to load: code=${adError.code}, domain=${adError.domain}, " +
-                                "message=${adError.message}, responseInfo=${adError.responseInfo}",
-                        )
+                        override fun onAdFailedToLoad(adError: LoadAdError) {
+                            Log.e(
+                                TAG,
+                                "Banner failed to load: code=${adError.code}, domain=${adError.domain}, " +
+                                    "message=${adError.message}, responseInfo=${adError.responseInfo}",
+                            )
+                        }
                     }
                 }
                 loadAd(AdRequest.Builder().build())

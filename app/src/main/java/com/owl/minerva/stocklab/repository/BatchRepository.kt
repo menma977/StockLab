@@ -8,9 +8,7 @@ interface BatchRepository {
     suspend fun getById(id: Long): Batch?
     suspend fun countByItemId(itemId: Long): Int
     suspend fun insert(batch: Batch): Long
-    suspend fun insertAll(batches: List<Batch>): List<Long>
     suspend fun update(batch: Batch)
     suspend fun delete(batch: Batch)
     suspend fun deleteByItemId(itemId: Long)
-    suspend fun deleteAll()
 }

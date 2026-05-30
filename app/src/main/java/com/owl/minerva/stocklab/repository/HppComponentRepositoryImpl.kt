@@ -11,9 +11,7 @@ class HppComponentRepositoryImpl(
     override suspend fun getById(id: Long): HppComponent? = hppComponentDao.getById(id)
     override suspend fun getByHppId(hppId: Long): List<HppComponent> = hppComponentDao.getByHppId(hppId)
     override suspend fun insert(hppComponent: HppComponent): Long = hppComponentDao.insert(hppComponent)
-    override suspend fun insertAll(hppComponents: List<HppComponent>): List<Long> = hppComponentDao.insertAll(hppComponents)
     override suspend fun update(hppComponent: HppComponent) = hppComponentDao.update(hppComponent)
     override suspend fun delete(hppComponent: HppComponent) = hppComponentDao.delete(hppComponent)
     override suspend fun deleteByItemId(itemId: Long) = hppComponentDao.deleteByItemId(itemId)
-    override suspend fun deleteAll() = hppComponentDao.deleteAll()
 }

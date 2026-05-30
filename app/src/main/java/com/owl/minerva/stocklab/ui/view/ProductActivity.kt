@@ -35,11 +35,15 @@ import com.owl.minerva.stocklab.model.Hpp
 import com.owl.minerva.stocklab.model.Item
 import com.owl.minerva.stocklab.model.Stock
 import com.owl.minerva.stocklab.repository.*
+import com.owl.minerva.stocklab.service.AmountFormatService
 import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.ItemService
 import com.owl.minerva.stocklab.service.MoneyFormatService
+import com.owl.minerva.stocklab.service.PricingService
 import com.owl.minerva.stocklab.ui.components.AdMobBanner
+import com.owl.minerva.stocklab.ui.components.MetricText
 import com.owl.minerva.stocklab.ui.components.ProfitBadge
+import com.owl.minerva.stocklab.ui.components.TwoColumnRow
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
 
@@ -262,12 +266,12 @@ private fun ProductListCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            RowLine(
+            TwoColumnRow(
                 left = {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        ProductMetric(
+                        MetricText(
                             label = "Product Name",
                             value = product.name,
                         )
@@ -312,7 +316,7 @@ private fun ProductListCard(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.secondaryContainer,
             ) {
-                RowLine(
+                TwoColumnRow(
                     modifier = Modifier.padding(14.dp),
                     left = {
                         Column(
@@ -360,7 +364,7 @@ private fun ProductListCard(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    RowLine(
+                    TwoColumnRow(
                         left = {
                             Text(
                                 text = product.activeBatchCode,
@@ -381,15 +385,15 @@ private fun ProductListCard(
 
             HorizontalDivider()
 
-            RowLine(
+            TwoColumnRow(
                 left = {
-                    ProductMetric(
+                    MetricText(
                         label = "HPP per Unit",
                         value = product.hppPerUnit,
                     )
                 },
                 right = {
-                    ProductMetric(
+                    MetricText(
                         label = "Net Income",
                         value = product.netIncome,
                         horizontalAlignment = Alignment.End,
@@ -397,47 +401,6 @@ private fun ProductListCard(
                 },
             )
         }
-    }
-}
-
-@Composable
-private fun RowLine(
-    left: @Composable () -> Unit,
-    right: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        left()
-        right()
-    }
-}
-
-@Composable
-private fun ProductMetric(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = horizontalAlignment,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
     }
 }
 
@@ -465,7 +428,7 @@ private fun Item.toProductCardUiState(
         ?.amount
         ?.toDouble()
         ?: 0.0
-    val finalPrice = calculateSellPrice(
+    val finalPrice = PricingService.calculateSellPrice(
         hppPerUnit = hppPerUnit,
         profitTakePercent = profitTakePercent,
     )
@@ -489,25 +452,10 @@ private fun Item.toProductCardUiState(
         currentSellPrice = MoneyFormatService.format(currentSellPrice, currency),
         profitCutPercent = profitCutPercent,
         activeBatchCode = activeBatchCode,
-        totalStock = "${formatAmount(activeBatchStock)} ${unit.label()}",
+        totalStock = "${AmountFormatService.format(activeBatchStock)} ${unit.label()}",
         hppPerUnit = MoneyFormatService.format(hppPerUnit, currency),
         netIncome = MoneyFormatService.format(net, currency),
     )
 }
 
 private fun UnitType.label(): String = name
-
-private fun formatAmount(value: Double): String {
-    return if (value % 1.0 == 0.0) {
-        value.toLong().toString()
-    } else {
-        value.toString()
-    }
-}
-
-private fun calculateSellPrice(
-    hppPerUnit: Double,
-    profitTakePercent: Double,
-): Double {
-    return hppPerUnit * (1.0 + profitTakePercent / 100.0)
-}

@@ -1,6 +1,7 @@
 package com.owl.minerva.stocklab.service
 
 import android.content.Context
+import androidx.core.content.edit
 import com.owl.minerva.stocklab.enums.AppCurrency
 
 class CurrencySettingsStore(context: Context) {
@@ -16,9 +17,9 @@ class CurrencySettingsStore(context: Context) {
     }
 
     fun setCurrency(currency: AppCurrency) {
-        preferences.edit()
-            .putString(KEY_CURRENCY, currency.name)
-            .apply()
+        preferences.edit {
+            putString(KEY_CURRENCY, currency.name)
+        }
     }
 
     private companion object {

@@ -7,9 +7,7 @@ interface BatchCostRepository {
     fun getAll(): Flow<List<BatchCost>>
     suspend fun getById(id: Long): BatchCost?
     suspend fun insert(batchCost: BatchCost): Long
-    suspend fun insertAll(batchCosts: List<BatchCost>): List<Long>
     suspend fun update(batchCost: BatchCost)
     suspend fun delete(batchCost: BatchCost)
     suspend fun deleteByItemId(itemId: Long)
-    suspend fun deleteAll()
 }

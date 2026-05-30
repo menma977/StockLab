@@ -11,9 +11,7 @@ class LedgerRepositoryImpl(
     override suspend fun getById(id: Long): Ledger? = ledgerDao.getById(id)
     override suspend fun countByItemId(itemId: Long): Int = ledgerDao.countByItemId(itemId)
     override suspend fun insert(ledger: Ledger): Long = ledgerDao.insert(ledger)
-    override suspend fun insertAll(ledgers: List<Ledger>): List<Long> = ledgerDao.insertAll(ledgers)
     override suspend fun update(ledger: Ledger) = ledgerDao.update(ledger)
     override suspend fun delete(ledger: Ledger) = ledgerDao.delete(ledger)
     override suspend fun deleteByItemId(itemId: Long) = ledgerDao.deleteByItemId(itemId)
-    override suspend fun deleteAll() = ledgerDao.deleteAll()
 }

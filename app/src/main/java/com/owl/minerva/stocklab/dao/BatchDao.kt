@@ -9,9 +9,6 @@ interface BatchDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(batch: Batch): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(batches: List<Batch>): List<Long>
-
     @Update
     suspend fun update(batch: Batch)
 
@@ -36,6 +33,4 @@ interface BatchDao {
     @Query("DELETE FROM batch WHERE itemId = :itemId")
     suspend fun deleteByItemId(itemId: Long)
 
-    @Query("DELETE FROM batch")
-    suspend fun deleteAll()
 }

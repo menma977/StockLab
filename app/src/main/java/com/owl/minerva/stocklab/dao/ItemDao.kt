@@ -9,9 +9,6 @@ interface ItemDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: Item): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(items: List<Item>): List<Long>
-
     @Update
     suspend fun update(item: Item)
 
@@ -27,6 +24,4 @@ interface ItemDao {
     @Query("SELECT * FROM item WHERE code = :code LIMIT 1")
     suspend fun getByCode(code: String): Item?
 
-    @Query("DELETE FROM item")
-    suspend fun deleteAll()
 }

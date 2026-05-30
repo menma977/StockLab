@@ -9,9 +9,6 @@ interface BatchCostDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(batchCost: BatchCost): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(batchCosts: List<BatchCost>): List<Long>
-
     @Update
     suspend fun update(batchCost: BatchCost)
 
@@ -37,6 +34,4 @@ interface BatchCostDao {
     )
     suspend fun deleteByItemId(itemId: Long)
 
-    @Query("DELETE FROM batch_cost")
-    suspend fun deleteAll()
 }

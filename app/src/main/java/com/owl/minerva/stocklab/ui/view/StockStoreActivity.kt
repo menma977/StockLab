@@ -23,7 +23,6 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -37,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,9 +58,14 @@ import com.owl.minerva.stocklab.repository.LedgerRepositoryImpl
 import com.owl.minerva.stocklab.repository.StockInRepositoryImpl
 import com.owl.minerva.stocklab.repository.StockRepositoryImpl
 import com.owl.minerva.stocklab.service.CurrencySettingsStore
-import com.owl.minerva.stocklab.service.ItemHppComponentInput
+import com.owl.minerva.stocklab.service.AmountFormatService
+import com.owl.minerva.stocklab.service.HppCostInput
+import com.owl.minerva.stocklab.service.HppCostService
 import com.owl.minerva.stocklab.service.MoneyFormatService
+import com.owl.minerva.stocklab.service.PricingService
 import com.owl.minerva.stocklab.service.StockBatchService
+import com.owl.minerva.stocklab.ui.components.CostAmountField
+import com.owl.minerva.stocklab.ui.components.FormSectionHeader
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
 
@@ -119,7 +124,7 @@ fun StockStoreContainer(
     }
 
     var productName by remember { mutableStateOf("") }
-    var existingProfitTakePercent by remember { mutableStateOf(0.0) }
+    var existingProfitTakePercent by remember { mutableDoubleStateOf(0.0) }
     var stockAmount by remember { mutableStateOf("") }
     var profitTakePercent by remember { mutableStateOf("") }
     var buyPrice by remember { mutableStateOf("") }
@@ -130,7 +135,7 @@ fun StockStoreContainer(
     var cargo by remember { mutableStateOf("") }
     var production by remember { mutableStateOf("") }
     var nextDynamicCostId by remember { mutableIntStateOf(0) }
-    val dynamicCosts = remember { mutableStateListOf<StockCostInput>() }
+    val dynamicCosts = remember { mutableStateListOf<HppCostInput>() }
 
     LaunchedEffect(itemId) {
         if (itemId > 0L) {
@@ -142,7 +147,8 @@ fun StockStoreContainer(
                 database.hppComponentDao().getByHppId(hppData.id)
             }.orEmpty()
             val fixedCosts = components.associateBy { component -> component.name.lowercase() }
-            buyPrice = fixedCosts["buy price"]?.amount?.toString() ?: item?.buyPrice?.toLongString().orEmpty()
+            buyPrice = fixedCosts["buy price"]?.amount?.toString()
+                ?: item?.buyPrice?.let { AmountFormatService.format(it) }.orEmpty()
             tax = fixedCosts["tax"]?.amount?.toString().orEmpty()
             fee = fixedCosts["fee"]?.amount?.toString().orEmpty()
             packaging = fixedCosts["packaging"]?.amount?.toString().orEmpty()
@@ -152,10 +158,10 @@ fun StockStoreContainer(
 
             dynamicCosts.clear()
             components
-                .filterNot { component -> component.name.lowercase() in fixedCostNames }
+                .filterNot { component -> component.name.lowercase() in HppCostService.fixedCostNames }
                 .forEach { component ->
                     dynamicCosts.add(
-                        StockCostInput(
+                        HppCostInput(
                             id = nextDynamicCostId,
                             name = component.name,
                             amount = component.amount.toString(),
@@ -167,7 +173,7 @@ fun StockStoreContainer(
     }
 
     val effectiveProfitTakePercent = profitTakePercent.toDoubleOrNull() ?: existingProfitTakePercent
-    val currentHppPerUnit = calculateStockHppPerUnit(
+    val currentHppPerUnit = HppCostService.calculateHppPerUnit(
         buyPrice = buyPrice,
         tax = tax,
         fee = fee,
@@ -177,7 +183,7 @@ fun StockStoreContainer(
         production = production,
         dynamicCosts = dynamicCosts,
     )
-    val finalSellPrice = calculateStockSellPrice(
+    val finalSellPrice = PricingService.calculateSellPrice(
         hppPerUnit = currentHppPerUnit.toDouble(),
         profitTakePercent = effectiveProfitTakePercent,
     )
@@ -219,7 +225,7 @@ fun StockStoreContainer(
                             stockBatchService.store(
                                 itemId = itemId,
                                 amount = stockAmount.toDoubleOrNull() ?: 0.0,
-                                hppComponents = buildHppComponents(
+                                hppComponents = HppCostService.buildComponents(
                                     buyPrice = buyPrice,
                                     tax = tax,
                                     fee = fee,
@@ -257,7 +263,7 @@ fun StockStoreContainer(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
         ) {
-            StockSectionHeader(title = "Stock")
+            FormSectionHeader(title = "Stock")
 
             OutlinedTextField(
                 value = productName,
@@ -312,51 +318,51 @@ fun StockStoreContainer(
                 },
             )
 
-            StockSectionHeader(title = "HPP Costs")
+            FormSectionHeader(title = "HPP Costs")
 
-            StockCostAmountField(
+            CostAmountField(
                 value = buyPrice,
                 onValueChange = { buyPrice = it },
                 label = "Buy Price Per Unit",
             )
 
-            StockCostAmountField(
+            CostAmountField(
                 value = tax,
                 onValueChange = { tax = it },
                 label = "Tax Per Unit",
             )
 
-            StockCostAmountField(
+            CostAmountField(
                 value = fee,
                 onValueChange = { fee = it },
                 label = "Fee Per Unit",
             )
 
-            StockCostAmountField(
+            CostAmountField(
                 value = packaging,
                 onValueChange = { packaging = it },
                 label = "Packaging Per Unit",
             )
 
-            StockCostAmountField(
+            CostAmountField(
                 value = handling,
                 onValueChange = { handling = it },
                 label = "Handling Per Unit",
             )
 
-            StockCostAmountField(
+            CostAmountField(
                 value = cargo,
                 onValueChange = { cargo = it },
                 label = "Cargo Per Unit",
             )
 
-            StockCostAmountField(
+            CostAmountField(
                 value = production,
                 onValueChange = { production = it },
                 label = "Production Per Unit",
             )
 
-            StockSectionHeader(title = "Extra Costs")
+            FormSectionHeader(title = "Extra Costs")
 
             dynamicCosts.forEachIndexed { index, cost ->
                 Row(
@@ -407,7 +413,7 @@ fun StockStoreContainer(
 
             OutlinedButton(
                 onClick = {
-                    dynamicCosts.add(StockCostInput(id = nextDynamicCostId))
+                    dynamicCosts.add(HppCostInput(id = nextDynamicCostId))
                     nextDynamicCostId += 1
                 },
                 modifier = Modifier.padding(top = 12.dp),
@@ -423,136 +429,5 @@ fun StockStoreContainer(
                 )
             }
         }
-    }
-}
-
-private val fixedCostNames = setOf(
-    "buy price",
-    "tax",
-    "fee",
-    "packaging",
-    "handling",
-    "cargo",
-    "production",
-)
-
-private data class StockCostInput(
-    val id: Int,
-    val name: String = "",
-    val amount: String = "",
-)
-
-@Composable
-private fun StockSectionHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 24.dp),
-    ) {
-        Text(
-            text = title,
-            style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
-            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-        )
-        HorizontalDivider(
-            modifier = Modifier.padding(top = 8.dp),
-        )
-    }
-}
-
-@Composable
-private fun StockCostAmountField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp),
-        label = {
-            Text(text = label)
-        },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        singleLine = true,
-    )
-}
-
-private fun buildHppComponents(
-    buyPrice: String,
-    tax: String,
-    fee: String,
-    packaging: String,
-    handling: String,
-    cargo: String,
-    production: String,
-    dynamicCosts: List<StockCostInput>,
-): List<ItemHppComponentInput> {
-    val fixedCosts = listOf(
-        ItemHppComponentInput("Buy Price", parseStockCostAmount(buyPrice)),
-        ItemHppComponentInput("Tax", parseStockCostAmount(tax)),
-        ItemHppComponentInput("Fee", parseStockCostAmount(fee)),
-        ItemHppComponentInput("Packaging", parseStockCostAmount(packaging)),
-        ItemHppComponentInput("Handling", parseStockCostAmount(handling)),
-        ItemHppComponentInput("Cargo", parseStockCostAmount(cargo)),
-        ItemHppComponentInput("Production", parseStockCostAmount(production)),
-    )
-    val extraCosts = dynamicCosts.mapNotNull { cost ->
-        val costName = cost.name.trim()
-        val costAmount = parseStockCostAmount(cost.amount)
-
-        if (costName.isBlank() && costAmount == 0L) {
-            null
-        } else {
-            require(costName.isNotBlank()) { "Extra cost name cannot be blank." }
-            ItemHppComponentInput(costName, costAmount)
-        }
-    }
-
-    return fixedCosts + extraCosts
-}
-
-private fun calculateStockHppPerUnit(
-    buyPrice: String,
-    tax: String,
-    fee: String,
-    packaging: String,
-    handling: String,
-    cargo: String,
-    production: String,
-    dynamicCosts: List<StockCostInput>,
-): Long {
-    return parseStockCostAmount(buyPrice) +
-        parseStockCostAmount(tax) +
-        parseStockCostAmount(fee) +
-        parseStockCostAmount(packaging) +
-        parseStockCostAmount(handling) +
-        parseStockCostAmount(cargo) +
-        parseStockCostAmount(production) +
-        dynamicCosts.sumOf { cost -> parseStockCostAmount(cost.amount) }
-}
-
-private fun parseStockCostAmount(value: String): Long {
-    return value.toDoubleOrNull()?.toLong() ?: 0L
-}
-
-private fun calculateStockSellPrice(
-    hppPerUnit: Double,
-    profitTakePercent: Double,
-): Double {
-    return hppPerUnit * (1.0 + profitTakePercent / 100.0)
-}
-
-private fun Double.toLongString(): String {
-    return if (this % 1.0 == 0.0) {
-        toLong().toString()
-    } else {
-        toString()
     }
 }

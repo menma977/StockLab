@@ -9,9 +9,6 @@ interface LedgerDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(ledger: Ledger): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(ledgers: List<Ledger>): List<Long>
-
     @Update
     suspend fun update(ledger: Ledger)
 
@@ -57,6 +54,4 @@ interface LedgerDao {
     @Query("DELETE FROM ledger WHERE itemId = :itemId")
     suspend fun deleteByItemId(itemId: Long)
 
-    @Query("DELETE FROM ledger")
-    suspend fun deleteAll()
 }

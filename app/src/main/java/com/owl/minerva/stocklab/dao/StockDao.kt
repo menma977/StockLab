@@ -9,9 +9,6 @@ interface StockDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(stock: Stock): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(stocks: List<Stock>): List<Long>
-
     @Update
     suspend fun update(stock: Stock)
 
@@ -33,6 +30,4 @@ interface StockDao {
     @Query("DELETE FROM stock WHERE itemId = :itemId")
     suspend fun deleteByItemId(itemId: Long)
 
-    @Query("DELETE FROM stock")
-    suspend fun deleteAll()
 }
