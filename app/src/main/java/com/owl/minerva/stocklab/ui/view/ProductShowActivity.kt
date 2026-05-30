@@ -6,39 +6,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -50,14 +25,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.owl.minerva.stocklab.database.StockLabDatabase
 import com.owl.minerva.stocklab.enums.AppCurrency
-import com.owl.minerva.stocklab.model.Batch
-import com.owl.minerva.stocklab.model.BatchCost
-import com.owl.minerva.stocklab.model.HppComponent
-import com.owl.minerva.stocklab.model.Item
-import com.owl.minerva.stocklab.model.Ledger
-import com.owl.minerva.stocklab.model.Stock
-import com.owl.minerva.stocklab.model.StockIn
-import com.owl.minerva.stocklab.model.StockOut
+import com.owl.minerva.stocklab.model.*
 import com.owl.minerva.stocklab.service.AmountFormatService
 import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.MoneyFormatService
@@ -69,7 +37,7 @@ import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.util.*
 
 private const val HISTORY_PAGE_SIZE = 5
 
@@ -463,16 +431,16 @@ private fun ProductDetailCard(
             costs = product.templateCosts,
         )
 
-            DetailSection(
-                title = "Current Batch HPP Snapshot",
-                description = "Copied costs used by the active FIFO batch. Old batches stay unchanged.",
-                costs = product.batchSnapshotCosts,
-                footerRows = listOf(
-                    "Quantity" to product.batchQuantity,
-                    "HPP per Unit" to product.batchHppPerUnit,
-                    "Batch Total HPP" to product.totalBatchHpp,
-                ),
-            )
+        DetailSection(
+            title = "Current Batch HPP Snapshot",
+            description = "Copied costs used by the active FIFO batch. Old batches stay unchanged.",
+            costs = product.batchSnapshotCosts,
+            footerRows = listOf(
+                "Quantity" to product.batchQuantity,
+                "HPP per Unit" to product.batchHppPerUnit,
+                "Batch Total HPP" to product.totalBatchHpp,
+            ),
+        )
 
         RecordSection(
             title = "Batches",

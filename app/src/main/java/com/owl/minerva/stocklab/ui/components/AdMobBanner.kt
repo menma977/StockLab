@@ -4,8 +4,8 @@ import android.content.pm.ApplicationInfo
 import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -15,11 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.google.android.gms.ads.AdListener
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdSize
-import com.google.android.gms.ads.AdView
-import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.*
 
 @Composable
 fun AdMobBanner(
@@ -66,7 +62,7 @@ fun AdMobBanner(
                             Log.e(
                                 TAG,
                                 "Banner failed to load: code=${adError.code}, domain=${adError.domain}, " +
-                                    "message=${adError.message}, responseInfo=${adError.responseInfo}",
+                                        "message=${adError.message}, responseInfo=${adError.responseInfo}",
                             )
                         }
                     }

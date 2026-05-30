@@ -14,13 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -35,11 +29,7 @@ import com.owl.minerva.stocklab.model.Hpp
 import com.owl.minerva.stocklab.model.Item
 import com.owl.minerva.stocklab.model.Stock
 import com.owl.minerva.stocklab.repository.*
-import com.owl.minerva.stocklab.service.AmountFormatService
-import com.owl.minerva.stocklab.service.CurrencySettingsStore
-import com.owl.minerva.stocklab.service.ItemService
-import com.owl.minerva.stocklab.service.MoneyFormatService
-import com.owl.minerva.stocklab.service.PricingService
+import com.owl.minerva.stocklab.service.*
 import com.owl.minerva.stocklab.ui.components.AdMobBanner
 import com.owl.minerva.stocklab.ui.components.MetricText
 import com.owl.minerva.stocklab.ui.components.ProfitBadge

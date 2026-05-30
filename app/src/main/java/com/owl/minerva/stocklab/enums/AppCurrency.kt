@@ -1,7 +1,6 @@
 package com.owl.minerva.stocklab.enums
 
-import java.util.Currency
-import java.util.Locale
+import java.util.*
 
 enum class AppCurrency(
     val displayName: String,

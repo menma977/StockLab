@@ -1,27 +1,30 @@
 package com.owl.minerva.stocklab.ui.view
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.PointOfSale
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.edit
+import androidx.core.net.toUri
+import com.owl.minerva.stocklab.MainActivity
 import com.owl.minerva.stocklab.database.StockLabDatabase
 import com.owl.minerva.stocklab.enums.AppCurrency
 import com.owl.minerva.stocklab.model.Item
@@ -86,6 +89,7 @@ fun HomeContainer(
         mutableStateOf(currencySettingsStore.getCurrency())
     }
     var settingsDialogOpen by remember { mutableStateOf(false) }
+    var clearDataConfirmOpen by remember { mutableStateOf(false) }
     var sellDialogOpen by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf<Item?>(null) }
     var productExpanded by remember { mutableStateOf(false) }
@@ -287,6 +291,8 @@ fun HomeContainer(
         }
     }
 
+    val privacyPolicyUrl = stringResource(com.owl.minerva.stocklab.R.string.privacy_policy_url)
+
     if (settingsDialogOpen) {
         SettingsDialog(
             selectedCurrency = selectedCurrency,
@@ -294,8 +300,55 @@ fun HomeContainer(
                 selectedCurrency = currency
                 currencySettingsStore.setCurrency(currency)
             },
+            onClearAllData = {
+                clearDataConfirmOpen = true
+            },
+            onPrivacyPolicy = {
+                val browserIntent = Intent(Intent.ACTION_VIEW, privacyPolicyUrl.toUri())
+                context.startActivity(browserIntent)
+            },
             onDismiss = {
                 settingsDialogOpen = false
+            },
+        )
+    }
+
+    if (clearDataConfirmOpen) {
+        AlertDialog(
+            onDismissRequest = { clearDataConfirmOpen = false },
+            title = {
+                Text(text = stringResource(com.owl.minerva.stocklab.R.string.clear_all_data_confirm_title))
+            },
+            text = {
+                Text(text = stringResource(com.owl.minerva.stocklab.R.string.clear_all_data_confirm_message))
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        clearDataConfirmOpen = false
+                        scope.launch {
+                            database.clearAllTables()
+                            context.getSharedPreferences("stock_lab_settings", Context.MODE_PRIVATE)
+                                .edit {
+                                    clear()
+                                }
+                            val restartIntent = Intent(context, MainActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            }
+                            context.startActivity(restartIntent)
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                ) {
+                    Text(text = stringResource(com.owl.minerva.stocklab.R.string.clear_all_data))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { clearDataConfirmOpen = false }) {
+                    Text(text = "Cancel")
+                }
             },
         )
     }
@@ -522,6 +575,8 @@ private fun RecentLedgerRow(
 private fun SettingsDialog(
     selectedCurrency: AppCurrency,
     onCurrencyChange: (AppCurrency) -> Unit,
+    onClearAllData: () -> Unit,
+    onPrivacyPolicy: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -556,6 +611,37 @@ private fun SettingsDialog(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                TextButton(
+                    onClick = onClearAllData,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Clear All Data")
+                }
+
+                TextButton(
+                    onClick = onPrivacyPolicy,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.OpenInBrowser,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(com.owl.minerva.stocklab.R.string.privacy_policy))
+                }
             }
         },
         confirmButton = {
@@ -583,6 +669,7 @@ private fun calculateDefaultSellPrice(
         hppPerUnit != null && hppPerUnit > 0.0 -> {
             hppPerUnit * (1.0 + item.profitTakePercent / 100.0)
         }
+
         else -> 0.0
     }
 }
@@ -596,6 +683,6 @@ private fun lastFourMonthRanges(): List<Pair<Long, Long>> {
         val end = start.plusMonths(1)
 
         start.atStartOfDay(zone).toInstant().toEpochMilli() to
-            end.atStartOfDay(zone).toInstant().toEpochMilli()
+                end.atStartOfDay(zone).toInstant().toEpochMilli()
     }
 }

@@ -32,13 +32,13 @@ object HppCostService {
         dynamicCosts: List<HppCostInput>,
     ): Long {
         return parseAmount(buyPrice) +
-            parseAmount(tax) +
-            parseAmount(fee) +
-            parseAmount(packaging) +
-            parseAmount(handling) +
-            parseAmount(cargo) +
-            parseAmount(production) +
-            dynamicCosts.sumOf { cost -> parseAmount(cost.amount) }
+                parseAmount(tax) +
+                parseAmount(fee) +
+                parseAmount(packaging) +
+                parseAmount(handling) +
+                parseAmount(cargo) +
+                parseAmount(production) +
+                dynamicCosts.sumOf { cost -> parseAmount(cost.amount) }
     }
 
     fun buildComponents(
