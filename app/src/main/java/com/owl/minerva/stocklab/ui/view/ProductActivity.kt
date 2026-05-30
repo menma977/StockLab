@@ -28,18 +28,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.owl.minerva.stocklab.database.StockLabDatabase
+import com.owl.minerva.stocklab.enums.AppCurrency
 import com.owl.minerva.stocklab.enums.UnitType
 import com.owl.minerva.stocklab.model.Batch
 import com.owl.minerva.stocklab.model.Hpp
 import com.owl.minerva.stocklab.model.Item
 import com.owl.minerva.stocklab.model.Stock
 import com.owl.minerva.stocklab.repository.*
+import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.ItemService
+import com.owl.minerva.stocklab.service.MoneyFormatService
 import com.owl.minerva.stocklab.ui.components.ProfitBadge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
-import java.text.NumberFormat
-import java.util.*
 
 class ProductActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,13 +62,13 @@ fun ProductPreview() {
             previewProducts = listOf(
                 ProductCardUiState(
                     name = "Sample Product",
-                    finalPrice = "Rp 25,000",
-                    currentSellPrice = "Rp 0",
+                    finalPrice = "\$25,000.00",
+                    currentSellPrice = "\$0.00",
                     profitCutPercent = 25,
                     activeBatchCode = "TMBLR4821/B/1",
                     totalStock = "120 PCS",
-                    hppPerUnit = "Rp 18,000",
-                    netIncome = "Rp 7,000",
+                    hppPerUnit = "\$18,000.00",
+                    netIncome = "\$7,000.00",
                 ),
             ),
         )
@@ -83,6 +84,9 @@ fun ProductContainer(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val selectedCurrency = remember(context) {
+        CurrencySettingsStore(context).getCurrency()
+    }
     var deleteTarget by remember { mutableStateOf<ProductCardUiState?>(null) }
     val database = if (previewProducts == null) {
         remember(context) {
@@ -124,6 +128,7 @@ fun ProductContainer(
                 stocks = stocks,
                 hpps = hpps,
                 batches = batches,
+                currency = selectedCurrency,
             )
         }
     }
@@ -446,6 +451,7 @@ private fun Item.toProductCardUiState(
     stocks: List<Stock>,
     hpps: List<Hpp>,
     batches: List<Batch>,
+    currency: AppCurrency,
 ): ProductCardUiState {
     val hppPerUnit = hpps
         .filter { hpp -> hpp.itemId == id }
@@ -473,13 +479,13 @@ private fun Item.toProductCardUiState(
     return ProductCardUiState(
         itemId = id,
         name = name.orEmpty(),
-        finalPrice = formatCurrency(finalPrice),
-        currentSellPrice = formatCurrency(currentSellPrice),
+        finalPrice = MoneyFormatService.format(finalPrice, currency),
+        currentSellPrice = MoneyFormatService.format(currentSellPrice, currency),
         profitCutPercent = profitCutPercent,
         activeBatchCode = activeBatchCode,
         totalStock = "${formatAmount(activeBatchStock)} ${unit.label()}",
-        hppPerUnit = formatCurrency(hppPerUnit),
-        netIncome = formatCurrency(net),
+        hppPerUnit = MoneyFormatService.format(hppPerUnit, currency),
+        netIncome = MoneyFormatService.format(net, currency),
     )
 }
 
@@ -491,14 +497,6 @@ private fun formatAmount(value: Double): String {
     } else {
         value.toString()
     }
-}
-
-private fun formatCurrency(value: Double): String {
-    val locale = Locale.Builder()
-        .setLanguage("id")
-        .setRegion("ID")
-        .build()
-    return NumberFormat.getCurrencyInstance(locale).format(value)
 }
 
 private fun calculateSellPrice(

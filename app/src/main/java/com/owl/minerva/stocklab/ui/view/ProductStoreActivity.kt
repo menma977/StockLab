@@ -26,12 +26,12 @@ import com.owl.minerva.stocklab.database.StockLabDatabase
 import com.owl.minerva.stocklab.enums.UnitType
 import com.owl.minerva.stocklab.model.Item
 import com.owl.minerva.stocklab.repository.*
+import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.ItemHppComponentInput
 import com.owl.minerva.stocklab.service.ItemService
+import com.owl.minerva.stocklab.service.MoneyFormatService
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
-import java.text.NumberFormat
-import java.util.Locale
 
 class ProductStoreActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +61,9 @@ fun ProductStoreContainer(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val selectedCurrency = remember(context) {
+        CurrencySettingsStore(context).getCurrency()
+    }
     val itemService = remember(context) {
         val database = StockLabDatabase.getInstance(context)
         ItemService(
@@ -234,7 +237,7 @@ fun ProductStoreContainer(
                 onClick = {},
                 modifier = Modifier.padding(top = 12.dp),
                 label = {
-                    Text(text = "Final Sell Price: ${formatCurrency(finalSellPricePreview)}")
+                    Text(text = "Final Sell Price: ${MoneyFormatService.format(finalSellPricePreview, selectedCurrency)}")
                 },
             )
 
@@ -479,12 +482,4 @@ private fun calculateSellPrice(
     profitTakePercent: Double,
 ): Double {
     return hppPerUnit * (1.0 + profitTakePercent / 100.0)
-}
-
-private fun formatCurrency(value: Double): String {
-    val locale = Locale.Builder()
-        .setLanguage("id")
-        .setRegion("ID")
-        .build()
-    return NumberFormat.getCurrencyInstance(locale).format(value)
 }

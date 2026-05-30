@@ -57,12 +57,12 @@ import com.owl.minerva.stocklab.repository.ItemRepositoryImpl
 import com.owl.minerva.stocklab.repository.LedgerRepositoryImpl
 import com.owl.minerva.stocklab.repository.StockInRepositoryImpl
 import com.owl.minerva.stocklab.repository.StockRepositoryImpl
+import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.ItemHppComponentInput
+import com.owl.minerva.stocklab.service.MoneyFormatService
 import com.owl.minerva.stocklab.service.StockBatchService
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
-import java.text.NumberFormat
-import java.util.Locale
 
 class StockStoreActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -99,6 +99,9 @@ fun StockStoreContainer(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val selectedCurrency = remember(context) {
+        CurrencySettingsStore(context).getCurrency()
+    }
     val database = remember(context) {
         StockLabDatabase.getInstance(context)
     }
@@ -297,7 +300,7 @@ fun StockStoreContainer(
                 onClick = {},
                 modifier = Modifier.padding(top = 12.dp),
                 label = {
-                    Text(text = "HPP Per Unit: ${formatStockCurrency(currentHppPerUnit.toDouble())}")
+                    Text(text = "HPP Per Unit: ${MoneyFormatService.format(currentHppPerUnit.toDouble(), selectedCurrency)}")
                 },
             )
 
@@ -305,7 +308,7 @@ fun StockStoreContainer(
                 onClick = {},
                 modifier = Modifier.padding(top = 8.dp),
                 label = {
-                    Text(text = "Final Sell Price: ${formatStockCurrency(finalSellPrice)}")
+                    Text(text = "Final Sell Price: ${MoneyFormatService.format(finalSellPrice, selectedCurrency)}")
                 },
             )
 
@@ -544,14 +547,6 @@ private fun calculateStockSellPrice(
     profitTakePercent: Double,
 ): Double {
     return hppPerUnit * (1.0 + profitTakePercent / 100.0)
-}
-
-private fun formatStockCurrency(value: Double): String {
-    val locale = Locale.Builder()
-        .setLanguage("id")
-        .setRegion("ID")
-        .build()
-    return NumberFormat.getCurrencyInstance(locale).format(value)
 }
 
 private fun Double.toLongString(): String {

@@ -23,19 +23,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.owl.minerva.stocklab.database.StockLabDatabase
+import com.owl.minerva.stocklab.enums.AppCurrency
 import com.owl.minerva.stocklab.model.Item
 import com.owl.minerva.stocklab.model.Ledger
 import com.owl.minerva.stocklab.repository.ItemRepositoryImpl
 import com.owl.minerva.stocklab.repository.LedgerRepositoryImpl
 import com.owl.minerva.stocklab.repository.StockOutRepositoryImpl
 import com.owl.minerva.stocklab.repository.StockRepositoryImpl
+import com.owl.minerva.stocklab.service.CurrencySettingsStore
+import com.owl.minerva.stocklab.service.MoneyFormatService
 import com.owl.minerva.stocklab.service.StockOutService
 import com.owl.minerva.stocklab.ui.components.ButtonIcon
 import com.owl.minerva.stocklab.ui.components.ProfitMiniChart
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -77,6 +78,13 @@ fun HomeContainer(
     }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val currencySettingsStore = remember(context) {
+        CurrencySettingsStore(context)
+    }
+    var selectedCurrency by remember {
+        mutableStateOf(currencySettingsStore.getCurrency())
+    }
+    var settingsDialogOpen by remember { mutableStateOf(false) }
     var sellDialogOpen by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf<Item?>(null) }
     var productExpanded by remember { mutableStateOf(false) }
@@ -112,8 +120,8 @@ fun HomeContainer(
         ).collectAsState(initial = 0L)
         cashFlow
     }
-    val monthlyCashFlowText = remember(monthlyCashFlow) {
-        formatCompactMoney(monthlyCashFlow)
+    val monthlyCashFlowText = remember(monthlyCashFlow, selectedCurrency) {
+        MoneyFormatService.formatCompact(monthlyCashFlow, selectedCurrency)
     }
     val cashFlowChartValues = if (cashFlowChartValuesPreview != null) {
         cashFlowChartValuesPreview
@@ -175,7 +183,9 @@ fun HomeContainer(
                     )
                 }
                 FilledIconButton(
-                    onClick = {},
+                    onClick = {
+                        settingsDialogOpen = true
+                    },
                     modifier = Modifier.size(35.dp),
                 ) {
                     Icon(
@@ -266,9 +276,23 @@ fun HomeContainer(
             RecentLedgerSection(
                 ledgers = recentLedgers,
                 items = items,
+                currency = selectedCurrency,
                 modifier = Modifier.weight(1f),
             )
         }
+    }
+
+    if (settingsDialogOpen) {
+        SettingsDialog(
+            selectedCurrency = selectedCurrency,
+            onCurrencyChange = { currency ->
+                selectedCurrency = currency
+                currencySettingsStore.setCurrency(currency)
+            },
+            onDismiss = {
+                settingsDialogOpen = false
+            },
+        )
     }
 
     if (sellDialogOpen) {
@@ -396,6 +420,7 @@ fun HomeContainer(
 private fun RecentLedgerSection(
     ledgers: List<Ledger>,
     items: List<Item>,
+    currency: AppCurrency,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -432,6 +457,7 @@ private fun RecentLedgerSection(
                     RecentLedgerRow(
                         ledger = ledger,
                         productName = productName,
+                        currency = currency,
                     )
                 }
             }
@@ -443,6 +469,7 @@ private fun RecentLedgerSection(
 private fun RecentLedgerRow(
     ledger: Ledger,
     productName: String,
+    currency: AppCurrency,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -477,7 +504,7 @@ private fun RecentLedgerRow(
             }
 
             Text(
-                text = "${ledger.direction.name}: ${formatCompactMoney(ledger.amount)}",
+                text = "${ledger.direction.name}: ${MoneyFormatService.formatCompact(ledger.amount, currency)}",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
@@ -486,21 +513,52 @@ private fun RecentLedgerRow(
     }
 }
 
-private fun formatCompactMoney(value: Long): String {
-    val absValue = kotlin.math.abs(value)
-    val sign = if (value < 0) "-" else ""
-    val divisor = when {
-        absValue >= 1_000_000_000L -> 1_000_000_000L to "B"
-        absValue >= 1_000_000L -> 1_000_000L to "M"
-        absValue >= 1_000L -> 1_000L to "K"
-        else -> return value.toString()
-    }
-    val scaled = BigDecimal(absValue)
-        .divide(BigDecimal(divisor.first), 2, RoundingMode.HALF_UP)
-        .stripTrailingZeros()
-        .toPlainString()
-
-    return "$sign$scaled${divisor.second}"
+@Composable
+private fun SettingsDialog(
+    selectedCurrency: AppCurrency,
+    onCurrencyChange: (AppCurrency) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "Settings")
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = "Currency",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                AppCurrency.entries.forEach { currency ->
+                    ListItem(
+                        headlineContent = {
+                            Text(text = currency.name)
+                        },
+                        supportingContent = {
+                            Text(text = currency.displayName)
+                        },
+                        leadingContent = {
+                            RadioButton(
+                                selected = currency == selectedCurrency,
+                                onClick = {
+                                    onCurrencyChange(currency)
+                                },
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = "Done")
+            }
+        },
+    )
 }
 
 private fun Double.toInputText(): String {

@@ -49,6 +49,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.owl.minerva.stocklab.database.StockLabDatabase
+import com.owl.minerva.stocklab.enums.AppCurrency
 import com.owl.minerva.stocklab.model.Batch
 import com.owl.minerva.stocklab.model.BatchCost
 import com.owl.minerva.stocklab.model.HppComponent
@@ -57,9 +58,10 @@ import com.owl.minerva.stocklab.model.Ledger
 import com.owl.minerva.stocklab.model.Stock
 import com.owl.minerva.stocklab.model.StockIn
 import com.owl.minerva.stocklab.model.StockOut
+import com.owl.minerva.stocklab.service.CurrencySettingsStore
+import com.owl.minerva.stocklab.service.MoneyFormatService
 import com.owl.minerva.stocklab.ui.components.ProfitBadge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
-import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -93,37 +95,37 @@ fun ProductShowPreview() {
             previewProduct = ProductShowUiState(
                 name = "Sample Product",
                 unit = "PCS",
-                finalPrice = "Rp 100.000",
-                currentSellPrice = "Rp 0",
-                hppPerUnit = "Rp 96.500",
-                netIncome = "Rp 3.500",
+                finalPrice = "\$100,000.00",
+                currentSellPrice = "\$0.00",
+                hppPerUnit = "\$96,500.00",
+                netIncome = "\$3,500.00",
                 profitCutPercent = 3,
                 activeBatchCode = "TMBLR4821/B/1",
                 activeBatchStock = "120 PCS",
-                buyPrice = "Rp 70.000",
-                totalBatchHpp = "Rp 11.580.000",
+                buyPrice = "\$70,000.00",
+                totalBatchHpp = "\$11,580,000.00",
                 batchQuantity = "120 PCS",
-                batchHppPerUnit = "Rp 96.500",
+                batchHppPerUnit = "\$96,500.00",
                 templateCosts = listOf(
-                    ProductCostUiState("Buy Price", "Rp 70.000"),
-                    ProductCostUiState("Cargo", "Rp 25.000"),
-                    ProductCostUiState("Fee", "Rp 1.500"),
+                    ProductCostUiState("Buy Price", "\$70,000.00"),
+                    ProductCostUiState("Cargo", "\$25,000.00"),
+                    ProductCostUiState("Fee", "\$1,500.00"),
                 ),
                 batchSnapshotCosts = listOf(
-                    ProductCostUiState("Buy Price", "Rp 70.000"),
-                    ProductCostUiState("Cargo", "Rp 25.000"),
-                    ProductCostUiState("Fee", "Rp 1.500"),
+                    ProductCostUiState("Buy Price", "\$70,000.00"),
+                    ProductCostUiState("Cargo", "\$25,000.00"),
+                    ProductCostUiState("Fee", "\$1,500.00"),
                 ),
                 batches = ProductRecordPageUiState(
                     records = listOf(
-                        ProductRecordUiState("TMBLR4821/B/1", "Stock: 120 PCS", "Total HPP: Rp 11.580.000"),
+                        ProductRecordUiState("TMBLR4821/B/1", "Stock: 120 PCS", "Total HPP: \$11,580,000.00"),
                     ),
                     page = 0,
                     totalItems = 1,
                 ),
                 ledgers = ProductRecordPageUiState(
                     records = listOf(
-                        ProductRecordUiState("TMBLR4821/L/1", "Batch: TMBLR4821/B/1", "IN: Rp 11.580.000"),
+                        ProductRecordUiState("TMBLR4821/L/1", "Batch: TMBLR4821/B/1", "IN: \$11,580,000.00"),
                     ),
                     page = 0,
                     totalItems = 1,
@@ -153,6 +155,9 @@ fun ProductShowContainer(
     previewProduct: ProductShowUiState? = null,
 ) {
     val context = LocalContext.current
+    val selectedCurrency = remember(context) {
+        CurrencySettingsStore(context).getCurrency()
+    }
     var product by remember { mutableStateOf(previewProduct) }
     var batchPage by remember { mutableStateOf(0) }
     var ledgerPage by remember { mutableStateOf(0) }
@@ -177,7 +182,7 @@ fun ProductShowContainer(
         }
     }
 
-    LaunchedEffect(itemId, previewProduct, batchPage, ledgerPage, stockInPage, stockOutPage, refreshKey) {
+    LaunchedEffect(itemId, previewProduct, batchPage, ledgerPage, stockInPage, stockOutPage, refreshKey, selectedCurrency) {
         if (previewProduct == null && itemId > 0) {
             val database = StockLabDatabase.getInstance(context)
             val item = database.itemDao().getById(itemId)
@@ -240,6 +245,7 @@ fun ProductShowContainer(
                 stockInTotal = stockInTotal,
                 stockOutPage = stockOutPage,
                 stockOutTotal = stockOutTotal,
+                currency = selectedCurrency,
             )
         }
     }
@@ -605,6 +611,7 @@ private fun Item.toProductShowUiState(
     stockInTotal: Int,
     stockOutPage: Int,
     stockOutTotal: Int,
+    currency: AppCurrency,
 ): ProductShowUiState {
     val finalPrice = calculateSellPrice(
         hppPerUnit = hppPerUnit,
@@ -615,11 +622,11 @@ private fun Item.toProductShowUiState(
     return ProductShowUiState(
         name = name.orEmpty(),
         unit = unit.name,
-        buyPrice = formatCurrency(buyPrice),
-        finalPrice = formatCurrency(finalPrice),
-        currentSellPrice = formatCurrency(currentSellPrice),
-        hppPerUnit = formatCurrency(hppPerUnit),
-        netIncome = formatCurrency(netIncome),
+        buyPrice = MoneyFormatService.format(buyPrice, currency),
+        finalPrice = MoneyFormatService.format(finalPrice, currency),
+        currentSellPrice = MoneyFormatService.format(currentSellPrice, currency),
+        hppPerUnit = MoneyFormatService.format(hppPerUnit, currency),
+        netIncome = MoneyFormatService.format(netIncome, currency),
         profitCutPercent = profitCutPercent,
         activeBatchCode = activeStock?.batchId
             ?.let { batchId -> allBatchesForNumbering.firstOrNull { batch -> batch.id == batchId } }
@@ -627,19 +634,19 @@ private fun Item.toProductShowUiState(
             ?.takeIf { code -> code.isNotBlank() }
             ?: "No active batch",
         activeBatchStock = "${formatAmount(activeStock?.amount ?: 0.0)} ${unit.name}",
-        totalBatchHpp = formatCurrency(totalBatchHpp.toDouble()),
+        totalBatchHpp = MoneyFormatService.format(totalBatchHpp, currency),
         batchQuantity = "${formatAmount(activeStock?.amount ?: 0.0)} ${unit.name}",
-        batchHppPerUnit = formatCurrency(hppPerUnit),
+        batchHppPerUnit = MoneyFormatService.format(hppPerUnit, currency),
         templateCosts = templateCosts.map { cost ->
             ProductCostUiState(
                 name = cost.name,
-                amount = formatCurrency(cost.amount.toDouble()),
+                amount = MoneyFormatService.format(cost.amount, currency),
             )
         },
         batchSnapshotCosts = batchSnapshotCosts.map { cost ->
             ProductCostUiState(
                 name = cost.name,
-                amount = formatCurrency(cost.amount.toDouble()),
+                amount = MoneyFormatService.format(cost.amount, currency),
             )
         },
         batches = ProductRecordPageUiState(
@@ -647,7 +654,7 @@ private fun Item.toProductShowUiState(
                 ProductRecordUiState(
                     title = batch.code.ifBlank { "Batch ${batch.id}" },
                     description = "Stock: ${batch.amount} ${unit.name} • ${formatTimestamp(batch.createdAt)}",
-                    trailing = "Total HPP: ${formatCurrency(batch.totalHpp.toDouble())}",
+                    trailing = "Total HPP: ${MoneyFormatService.format(batch.totalHpp, currency)}",
                 )
             },
             page = batchPage,
@@ -663,7 +670,7 @@ private fun Item.toProductShowUiState(
                 ProductRecordUiState(
                     title = ledger.code.ifBlank { "Ledger ${ledger.id}" },
                     description = "Batch: $batchCode • ${formatTimestamp(ledger.createdAt)}",
-                    trailing = "${ledger.direction.name}: ${formatCurrency(ledger.amount.toDouble())}",
+                    trailing = "${ledger.direction.name}: ${MoneyFormatService.format(ledger.amount, currency)}",
                 )
             },
             page = ledgerPage,
@@ -880,14 +887,6 @@ private fun RecordSection(
             }
         }
     }
-}
-
-private fun formatCurrency(value: Double): String {
-    val locale = Locale.Builder()
-        .setLanguage("id")
-        .setRegion("ID")
-        .build()
-    return NumberFormat.getCurrencyInstance(locale).format(value)
 }
 
 private fun formatAmount(value: Double): String {
