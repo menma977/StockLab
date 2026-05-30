@@ -60,6 +60,7 @@ import com.owl.minerva.stocklab.model.StockIn
 import com.owl.minerva.stocklab.model.StockOut
 import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.MoneyFormatService
+import com.owl.minerva.stocklab.ui.components.AdMobBanner
 import com.owl.minerva.stocklab.ui.components.ProfitBadge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import java.time.Instant
@@ -91,41 +92,50 @@ class ProductShowActivity : ComponentActivity() {
 @Composable
 fun ProductShowPreview() {
     StockLabTheme {
+        val currency = AppCurrency.USD
         ProductShowContainer(
             previewProduct = ProductShowUiState(
                 name = "Sample Product",
                 unit = "PCS",
-                finalPrice = "\$100,000.00",
-                currentSellPrice = "\$0.00",
-                hppPerUnit = "\$96,500.00",
-                netIncome = "\$3,500.00",
+                finalPrice = MoneyFormatService.format(100_000.0, currency),
+                currentSellPrice = MoneyFormatService.format(0.0, currency),
+                hppPerUnit = MoneyFormatService.format(96_500.0, currency),
+                netIncome = MoneyFormatService.format(3_500.0, currency),
                 profitCutPercent = 3,
                 activeBatchCode = "TMBLR4821/B/1",
                 activeBatchStock = "120 PCS",
-                buyPrice = "\$70,000.00",
-                totalBatchHpp = "\$11,580,000.00",
+                buyPrice = MoneyFormatService.format(70_000.0, currency),
+                totalBatchHpp = MoneyFormatService.format(11_580_000.0, currency),
                 batchQuantity = "120 PCS",
-                batchHppPerUnit = "\$96,500.00",
+                batchHppPerUnit = MoneyFormatService.format(96_500.0, currency),
                 templateCosts = listOf(
-                    ProductCostUiState("Buy Price", "\$70,000.00"),
-                    ProductCostUiState("Cargo", "\$25,000.00"),
-                    ProductCostUiState("Fee", "\$1,500.00"),
+                    ProductCostUiState("Buy Price", MoneyFormatService.format(70_000.0, currency)),
+                    ProductCostUiState("Cargo", MoneyFormatService.format(25_000.0, currency)),
+                    ProductCostUiState("Fee", MoneyFormatService.format(1_500.0, currency)),
                 ),
                 batchSnapshotCosts = listOf(
-                    ProductCostUiState("Buy Price", "\$70,000.00"),
-                    ProductCostUiState("Cargo", "\$25,000.00"),
-                    ProductCostUiState("Fee", "\$1,500.00"),
+                    ProductCostUiState("Buy Price", MoneyFormatService.format(70_000.0, currency)),
+                    ProductCostUiState("Cargo", MoneyFormatService.format(25_000.0, currency)),
+                    ProductCostUiState("Fee", MoneyFormatService.format(1_500.0, currency)),
                 ),
                 batches = ProductRecordPageUiState(
                     records = listOf(
-                        ProductRecordUiState("TMBLR4821/B/1", "Stock: 120 PCS", "Total HPP: \$11,580,000.00"),
+                        ProductRecordUiState(
+                            "TMBLR4821/B/1",
+                            "Stock: 120 PCS",
+                            "Total HPP: ${MoneyFormatService.format(11_580_000.0, currency)}",
+                        ),
                     ),
                     page = 0,
                     totalItems = 1,
                 ),
                 ledgers = ProductRecordPageUiState(
                     records = listOf(
-                        ProductRecordUiState("TMBLR4821/L/1", "Batch: TMBLR4821/B/1", "IN: \$11,580,000.00"),
+                        ProductRecordUiState(
+                            "TMBLR4821/L/1",
+                            "Batch: TMBLR4821/B/1",
+                            "IN: ${MoneyFormatService.format(11_580_000.0, currency)}",
+                        ),
                     ),
                     page = 0,
                     totalItems = 1,
@@ -353,6 +363,8 @@ private fun ProductDetailCard(
                 )
             }
         }
+
+        AdMobBanner()
 
         DetailCard {
             Surface(

@@ -38,6 +38,7 @@ import com.owl.minerva.stocklab.repository.*
 import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.ItemService
 import com.owl.minerva.stocklab.service.MoneyFormatService
+import com.owl.minerva.stocklab.ui.components.AdMobBanner
 import com.owl.minerva.stocklab.ui.components.ProfitBadge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
@@ -58,17 +59,18 @@ class ProductActivity : ComponentActivity() {
 @Composable
 fun ProductPreview() {
     StockLabTheme {
+        val currency = AppCurrency.USD
         ProductContainer(
             previewProducts = listOf(
                 ProductCardUiState(
                     name = "Sample Product",
-                    finalPrice = "\$25,000.00",
-                    currentSellPrice = "\$0.00",
+                    finalPrice = MoneyFormatService.format(25_000.0, currency),
+                    currentSellPrice = MoneyFormatService.format(0.0, currency),
                     profitCutPercent = 25,
                     activeBatchCode = "TMBLR4821/B/1",
                     totalStock = "120 PCS",
-                    hppPerUnit = "\$18,000.00",
-                    netIncome = "\$7,000.00",
+                    hppPerUnit = MoneyFormatService.format(18_000.0, currency),
+                    netIncome = MoneyFormatService.format(7_000.0, currency),
                 ),
             ),
         )
@@ -181,6 +183,10 @@ fun ProductContainer(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item {
+                AdMobBanner()
+            }
+
             items(products) { product ->
                 ProductListCard(
                     product = product,

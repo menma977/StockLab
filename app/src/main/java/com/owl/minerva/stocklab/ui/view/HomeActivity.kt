@@ -33,6 +33,7 @@ import com.owl.minerva.stocklab.repository.StockRepositoryImpl
 import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.MoneyFormatService
 import com.owl.minerva.stocklab.service.StockOutService
+import com.owl.minerva.stocklab.ui.components.AdMobBanner
 import com.owl.minerva.stocklab.ui.components.ButtonIcon
 import com.owl.minerva.stocklab.ui.components.ProfitMiniChart
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
@@ -272,6 +273,10 @@ fun HomeContainer(
                     modifier = Modifier.weight(1f),
                 )
             }
+
+            AdMobBanner(
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             RecentLedgerSection(
                 ledgers = recentLedgers,
