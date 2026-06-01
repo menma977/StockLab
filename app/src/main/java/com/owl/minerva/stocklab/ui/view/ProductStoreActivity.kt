@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -29,6 +30,7 @@ import com.owl.minerva.stocklab.repository.*
 import com.owl.minerva.stocklab.service.*
 import com.owl.minerva.stocklab.ui.components.CostAmountField
 import com.owl.minerva.stocklab.ui.components.FormSectionHeader
+import com.owl.minerva.stocklab.ui.components.clearFocusOnTapOutside
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
 
@@ -58,6 +60,7 @@ fun ProductStoreContainer(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val selectedCurrency = remember(context) {
@@ -179,6 +182,7 @@ fun ProductStoreContainer(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
+                .clearFocusOnTapOutside(focusManager)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
         ) {

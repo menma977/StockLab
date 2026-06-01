@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,6 +40,7 @@ import com.owl.minerva.stocklab.service.StockOutService
 import com.owl.minerva.stocklab.ui.components.AdMobBanner
 import com.owl.minerva.stocklab.ui.components.ButtonIcon
 import com.owl.minerva.stocklab.ui.components.ProfitMiniChart
+import com.owl.minerva.stocklab.ui.components.clearFocusOnTapOutside
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -77,6 +79,7 @@ fun HomeContainer(
     cashFlowChartValuesPreview: List<Float>? = null,
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val database = remember(context) {
         StockLabDatabase.getInstance(context)
     }
@@ -363,6 +366,7 @@ fun HomeContainer(
             },
             text = {
                 Column(
+                    modifier = Modifier.clearFocusOnTapOutside(focusManager),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     ExposedDropdownMenuBox(
