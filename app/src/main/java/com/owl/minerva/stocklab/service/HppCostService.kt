@@ -1,5 +1,7 @@
 package com.owl.minerva.stocklab.service
 
+import com.owl.minerva.stocklab.R
+
 data class HppCostInput(
     val id: Int,
     val name: String = "",
@@ -67,7 +69,7 @@ object HppCostService {
             if (costName.isBlank() && costAmount == 0L) {
                 null
             } else {
-                require(costName.isNotBlank()) { "Extra cost name cannot be blank." }
+                requireAppMessage(costName.isNotBlank(), R.string.error_extra_cost_name_blank)
                 ItemHppComponentInput(costName, costAmount)
             }
         }

@@ -2,6 +2,7 @@ package com.owl.minerva.stocklab.ui.view
 
 import android.app.Activity
 import android.content.Intent
+import android.content.res.Resources
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,11 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import com.owl.minerva.stocklab.R
 import com.owl.minerva.stocklab.database.StockLabDatabase
 import com.owl.minerva.stocklab.enums.AppCurrency
 import com.owl.minerva.stocklab.model.*
@@ -29,10 +33,10 @@ import com.owl.minerva.stocklab.service.AmountFormatService
 import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.MoneyFormatService
 import com.owl.minerva.stocklab.service.PricingService
-import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.components.AdMobBanner
 import com.owl.minerva.stocklab.ui.components.MetricText
 import com.owl.minerva.stocklab.ui.components.ProfitBadge
+import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import java.time.Instant
 import java.time.ZoneId
@@ -136,6 +140,7 @@ fun ProductShowContainer(
     previewProduct: ProductShowUiState? = null,
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val selectedCurrency = remember(context) {
         CurrencySettingsStore(context).getCurrency()
     }
@@ -227,6 +232,7 @@ fun ProductShowContainer(
                 stockOutPage = stockOutPage,
                 stockOutTotal = stockOutTotal,
                 currency = selectedCurrency,
+                resources = resources,
             )
         }
     }
@@ -238,7 +244,7 @@ fun ProductShowContainer(
                 modifier = Modifier.shadow(elevation = 4.dp),
                 title = {
                     Text(
-                        text = "Product Detail",
+                        text = stringResource(R.string.product_detail),
                         style = MaterialTheme.typography.titleLarge,
                     )
                 },
@@ -246,7 +252,7 @@ fun ProductShowContainer(
                     IconButton(onClick = { (context as? Activity)?.finish() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
@@ -268,7 +274,7 @@ fun ProductShowContainer(
                         )
                     },
                     text = {
-                        Text(text = "Add Stock")
+                        Text(text = stringResource(R.string.add_stock))
                     },
                 )
             }
@@ -314,7 +320,7 @@ private fun ProductDetailCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = "Product",
+                    text = stringResource(R.string.product),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -324,12 +330,12 @@ private fun ProductDetailCard(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Sold as ${product.unit}",
+                    text = stringResource(R.string.sold_as_format, product.unit),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = "Current Sell Price: ${product.currentSellPrice}",
+                    text = stringResource(R.string.current_sell_price_format, product.currentSellPrice),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -350,7 +356,7 @@ private fun ProductDetailCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     MetricText(
-                        label = "Final Price",
+                        label = stringResource(R.string.final_price),
                         value = product.finalPrice,
                     )
                     Column(
@@ -358,7 +364,7 @@ private fun ProductDetailCard(
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Text(
-                            text = "Profit Take",
+                            text = stringResource(R.string.profit_take),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                         )
@@ -372,11 +378,11 @@ private fun ProductDetailCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 MetricText(
-                    label = "Buy Price per Unit",
+                    label = stringResource(R.string.buy_price_per_unit_lower),
                     value = product.buyPrice,
                 )
                 MetricText(
-                    label = "HPP per Unit",
+                    label = stringResource(R.string.hpp_per_unit),
                     value = product.hppPerUnit,
                     horizontalAlignment = Alignment.End,
                 )
@@ -387,11 +393,11 @@ private fun ProductDetailCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 MetricText(
-                    label = "Net Income",
+                    label = stringResource(R.string.net_income),
                     value = product.netIncome,
                 )
                 MetricText(
-                    label = "Unit",
+                    label = stringResource(R.string.unit),
                     value = product.unit,
                     horizontalAlignment = Alignment.End,
                 )
@@ -400,12 +406,12 @@ private fun ProductDetailCard(
 
         DetailCard {
             Text(
-                text = "Current FIFO Batch",
+                text = stringResource(R.string.current_fifo_batch),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "This is the batch that will be consumed first for stock out.",
+                text = stringResource(R.string.current_fifo_batch_description),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -427,46 +433,46 @@ private fun ProductDetailCard(
         }
 
         DetailSection(
-            title = "Reusable HPP Template",
-            description = "Default per-unit cost structure reused for future batches.",
+            title = stringResource(R.string.reusable_hpp_template),
+            description = stringResource(R.string.reusable_hpp_template_description),
             costs = product.templateCosts,
         )
 
         DetailSection(
-            title = "Current Batch HPP Snapshot",
-            description = "Copied costs used by the active FIFO batch. Old batches stay unchanged.",
+            title = stringResource(R.string.current_batch_hpp_snapshot),
+            description = stringResource(R.string.current_batch_hpp_snapshot_description),
             costs = product.batchSnapshotCosts,
             footerRows = listOf(
-                "Quantity" to product.batchQuantity,
-                "HPP per Unit" to product.batchHppPerUnit,
-                "Batch Total HPP" to product.totalBatchHpp,
+                stringResource(R.string.quantity_label) to product.batchQuantity,
+                stringResource(R.string.hpp_per_unit) to product.batchHppPerUnit,
+                stringResource(R.string.batch_total_hpp) to product.totalBatchHpp,
             ),
         )
 
         RecordSection(
-            title = "Batches",
-            description = "All batches for this product. FIFO consumes the oldest batch with stock first.",
+            title = stringResource(R.string.batches),
+            description = stringResource(R.string.batches_description),
             page = product.batches,
             onPageChange = onBatchPageChange,
         )
 
         RecordSection(
-            title = "Ledger",
-            description = "Ledger rows are connected to this product.",
+            title = stringResource(R.string.ledger),
+            description = stringResource(R.string.ledger_description),
             page = product.ledgers,
             onPageChange = onLedgerPageChange,
         )
 
         RecordSection(
-            title = "Stock In",
-            description = "Incoming stock history for this product.",
+            title = stringResource(R.string.stock_in),
+            description = stringResource(R.string.stock_in_description),
             page = product.stockIns,
             onPageChange = onStockInPageChange,
         )
 
         RecordSection(
-            title = "Stock Out",
-            description = "Outgoing stock history for this product.",
+            title = stringResource(R.string.stock_out),
+            description = stringResource(R.string.stock_out_description),
             page = product.stockOuts,
             onPageChange = onStockOutPageChange,
         )
@@ -499,7 +505,7 @@ private fun ProductEmptyDetail() {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Text(
-            text = "Product detail is not available.",
+            text = stringResource(R.string.product_detail_unavailable),
             modifier = Modifier.padding(16.dp),
             style = MaterialTheme.typography.bodyMedium,
         )
@@ -548,7 +554,6 @@ data class ProductRecordPageUiState(
         .coerceAtLeast(1)
     val canGoPrevious: Boolean = page > 0
     val canGoNext: Boolean = page < totalPages - 1
-    val label: String = "Page ${page + 1} of $totalPages"
 }
 
 private fun Item.toProductShowUiState(
@@ -571,6 +576,7 @@ private fun Item.toProductShowUiState(
     stockOutPage: Int,
     stockOutTotal: Int,
     currency: AppCurrency,
+    resources: Resources,
 ): ProductShowUiState {
     val finalPrice = PricingService.calculateSellPrice(
         hppPerUnit = hppPerUnit,
@@ -591,29 +597,37 @@ private fun Item.toProductShowUiState(
             ?.let { batchId -> allBatchesForNumbering.firstOrNull { batch -> batch.id == batchId } }
             ?.code
             ?.takeIf { code -> code.isNotBlank() }
-            ?: "No active batch",
+            ?: resources.getString(R.string.no_active_batch),
         activeBatchStock = "${AmountFormatService.format(activeStock?.amount ?: 0.0)} ${unit.name}",
         totalBatchHpp = MoneyFormatService.format(totalBatchHpp, currency),
         batchQuantity = "${AmountFormatService.format(activeStock?.amount ?: 0.0)} ${unit.name}",
         batchHppPerUnit = MoneyFormatService.format(hppPerUnit, currency),
         templateCosts = templateCosts.map { cost ->
             ProductCostUiState(
-                name = cost.name,
+                name = localizedCostName(resources, cost.name),
                 amount = MoneyFormatService.format(cost.amount, currency),
             )
         },
         batchSnapshotCosts = batchSnapshotCosts.map { cost ->
             ProductCostUiState(
-                name = cost.name,
+                name = localizedCostName(resources, cost.name),
                 amount = MoneyFormatService.format(cost.amount, currency),
             )
         },
         batches = ProductRecordPageUiState(
             records = batches.map { batch ->
                 ProductRecordUiState(
-                    title = batch.code.ifBlank { "Batch ${batch.id}" },
-                    description = "Stock: ${batch.amount} ${unit.name} • ${formatTimestamp(batch.createdAt)}",
-                    trailing = "Total HPP: ${MoneyFormatService.format(batch.totalHpp, currency)}",
+                    title = batch.code.ifBlank { resources.getString(R.string.batch_fallback, batch.id) },
+                    description = resources.getString(
+                        R.string.stock_description,
+                        AmountFormatService.format(batch.amount.toDouble()),
+                        unit.name,
+                        formatTimestamp(batch.createdAt),
+                    ),
+                    trailing = resources.getString(
+                        R.string.total_hpp_format,
+                        MoneyFormatService.format(batch.totalHpp, currency),
+                    ),
                 )
             },
             page = batchPage,
@@ -625,11 +639,18 @@ private fun Item.toProductShowUiState(
                     .firstOrNull { batch -> batch.id == ledger.batchId }
                     ?.code
                     ?.takeIf { code -> code.isNotBlank() }
-                    ?: "Batch ${ledger.batchId}"
+                    ?: resources.getString(R.string.batch_fallback, ledger.batchId)
                 ProductRecordUiState(
-                    title = ledger.code.ifBlank { "Ledger ${ledger.id}" },
-                    description = "Batch: $batchCode • ${formatTimestamp(ledger.createdAt)}",
-                    trailing = "${ledger.direction.name}: ${MoneyFormatService.format(ledger.amount, currency)}",
+                    title = ledger.code.ifBlank { resources.getString(R.string.ledger_fallback, ledger.id) },
+                    description = resources.getString(
+                        R.string.batch_label,
+                        "$batchCode • ${formatTimestamp(ledger.createdAt)}",
+                    ),
+                    trailing = resources.getString(
+                        R.string.ledger_direction_amount,
+                        ledger.direction.name,
+                        MoneyFormatService.format(ledger.amount, currency),
+                    ),
                 )
             },
             page = ledgerPage,
@@ -638,9 +659,13 @@ private fun Item.toProductShowUiState(
         stockIns = ProductRecordPageUiState(
             records = stockIns.map { stockIn ->
                 ProductRecordUiState(
-                    title = stockIn.code.ifBlank { "Stock In ${stockIn.id}" },
-                    description = "Stock ID: ${stockIn.stockId} • ${formatTimestamp(stockIn.createdAt)}",
-                    trailing = "Amount: ${AmountFormatService.format(stockIn.amount)}",
+                    title = stockIn.code.ifBlank { resources.getString(R.string.stock_in_fallback, stockIn.id) },
+                    description = resources.getString(
+                        R.string.stock_id_description,
+                        stockIn.stockId,
+                        formatTimestamp(stockIn.createdAt),
+                    ),
+                    trailing = resources.getString(R.string.amount_format, AmountFormatService.format(stockIn.amount)),
                 )
             },
             page = stockInPage,
@@ -649,9 +674,13 @@ private fun Item.toProductShowUiState(
         stockOuts = ProductRecordPageUiState(
             records = stockOuts.map { stockOut ->
                 ProductRecordUiState(
-                    title = stockOut.code.ifBlank { "Stock Out ${stockOut.id}" },
-                    description = "Stock ID: ${stockOut.stockId} • ${formatTimestamp(stockOut.createdAt)}",
-                    trailing = "Amount: ${AmountFormatService.format(stockOut.amount)}",
+                    title = stockOut.code.ifBlank { resources.getString(R.string.stock_out_fallback, stockOut.id) },
+                    description = resources.getString(
+                        R.string.stock_id_description,
+                        stockOut.stockId,
+                        formatTimestamp(stockOut.createdAt),
+                    ),
+                    trailing = resources.getString(R.string.amount_format, AmountFormatService.format(stockOut.amount)),
                 )
             },
             page = stockOutPage,
@@ -692,7 +721,7 @@ private fun DetailSection(
             ) {
                 if (costs.isEmpty()) {
                     Text(
-                        text = "No cost data is available.",
+                        text = stringResource(R.string.no_cost_data_available),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -773,7 +802,7 @@ private fun RecordSection(
             ) {
                 if (page.records.isEmpty()) {
                     Text(
-                        text = "No data available.",
+                        text = stringResource(R.string.no_data_available),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -822,10 +851,10 @@ private fun RecordSection(
                         onClick = { onPageChange(page.page - 1) },
                         enabled = page.canGoPrevious,
                     ) {
-                        Text(text = "Previous")
+                        Text(text = stringResource(R.string.action_previous))
                     }
                     Text(
-                        text = page.label,
+                        text = stringResource(R.string.page_of_total, page.page + 1, page.totalPages),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -833,7 +862,7 @@ private fun RecordSection(
                         onClick = { onPageChange(page.page + 1) },
                         enabled = page.canGoNext,
                     ) {
-                        Text(text = "Next")
+                        Text(text = stringResource(R.string.action_next))
                     }
                 }
             }
@@ -845,4 +874,17 @@ private fun formatTimestamp(value: Long): String {
     return Instant.ofEpochMilli(value)
         .atZone(ZoneId.systemDefault())
         .format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm", Locale.getDefault()))
+}
+
+private fun localizedCostName(resources: Resources, name: String): String {
+    return when (name.lowercase(Locale.getDefault())) {
+        "buy price" -> resources.getString(R.string.buy_price_per_unit_lower)
+        "tax" -> resources.getString(R.string.tax_per_unit)
+        "fee" -> resources.getString(R.string.fee_per_unit)
+        "packaging" -> resources.getString(R.string.packaging_per_unit)
+        "handling" -> resources.getString(R.string.handling_per_unit)
+        "cargo" -> resources.getString(R.string.cargo_per_unit)
+        "production" -> resources.getString(R.string.production_per_unit)
+        else -> name
+    }
 }

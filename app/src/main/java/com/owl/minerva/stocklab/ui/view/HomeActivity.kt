@@ -5,10 +5,10 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import com.owl.minerva.stocklab.MainActivity
+import com.owl.minerva.stocklab.R
 import com.owl.minerva.stocklab.database.StockLabDatabase
 import com.owl.minerva.stocklab.enums.AppCurrency
 import com.owl.minerva.stocklab.model.Item
@@ -35,14 +37,15 @@ import com.owl.minerva.stocklab.repository.ItemRepositoryImpl
 import com.owl.minerva.stocklab.repository.LedgerRepositoryImpl
 import com.owl.minerva.stocklab.repository.StockOutRepositoryImpl
 import com.owl.minerva.stocklab.repository.StockRepositoryImpl
+import com.owl.minerva.stocklab.service.AppMessageException
 import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.MoneyFormatService
 import com.owl.minerva.stocklab.service.StockOutService
-import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.components.AdMobBanner
 import com.owl.minerva.stocklab.ui.components.ButtonIcon
 import com.owl.minerva.stocklab.ui.components.ProfitMiniChart
 import com.owl.minerva.stocklab.ui.components.clearFocusOnTapOutside
+import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -82,6 +85,7 @@ fun HomeContainer(
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val resources = LocalResources.current
     val database = remember(context) {
         StockLabDatabase.getInstance(context)
     }
@@ -181,7 +185,7 @@ fun HomeContainer(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = "Welcome Back",
+                        text = stringResource(R.string.welcome_back),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -200,7 +204,7 @@ fun HomeContainer(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Settings,
-                        contentDescription = "Profile settings",
+                        contentDescription = stringResource(R.string.profile_settings),
                         modifier = Modifier.size(20.dp),
                     )
                 }
@@ -226,7 +230,7 @@ fun HomeContainer(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(
-                                text = "Monthly Cash Flow",
+                                text = stringResource(R.string.monthly_cash_flow),
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.primaryContainer
                             )
@@ -266,7 +270,7 @@ fun HomeContainer(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 ButtonIcon(
-                    title = "Product",
+                    title = stringResource(R.string.product),
                     icon = Icons.Default.Inventory2,
                     onClick = {
                         context.startActivity(Intent(context, ProductActivity::class.java))
@@ -274,7 +278,7 @@ fun HomeContainer(
                     modifier = Modifier.weight(1f),
                 )
                 ButtonIcon(
-                    title = "Sell",
+                    title = stringResource(R.string.sell),
                     icon = Icons.Default.PointOfSale,
                     onClick = {
                         sellDialogOpen = true
@@ -296,7 +300,9 @@ fun HomeContainer(
         }
     }
 
-    val privacyPolicyUrl = stringResource(com.owl.minerva.stocklab.R.string.privacy_policy_url)
+    val privacyPolicyUrl = stringResource(R.string.privacy_policy_url)
+    val sellSavedMessage = stringResource(R.string.sell_saved)
+    val invalidSellMessage = stringResource(R.string.error_invalid_sell)
 
     if (settingsDialogOpen) {
         SettingsDialog(
@@ -322,10 +328,10 @@ fun HomeContainer(
         AlertDialog(
             onDismissRequest = { clearDataConfirmOpen = false },
             title = {
-                Text(text = stringResource(com.owl.minerva.stocklab.R.string.clear_all_data_confirm_title))
+                Text(text = stringResource(R.string.clear_all_data_confirm_title))
             },
             text = {
-                Text(text = stringResource(com.owl.minerva.stocklab.R.string.clear_all_data_confirm_message))
+                Text(text = stringResource(R.string.clear_all_data_confirm_message))
             },
             confirmButton = {
                 TextButton(
@@ -347,12 +353,12 @@ fun HomeContainer(
                         contentColor = MaterialTheme.colorScheme.error,
                     ),
                 ) {
-                    Text(text = stringResource(com.owl.minerva.stocklab.R.string.clear_all_data))
+                    Text(text = stringResource(R.string.clear_all_data))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { clearDataConfirmOpen = false }) {
-                    Text(text = "Cancel")
+                    Text(text = stringResource(R.string.action_cancel))
                 }
             },
         )
@@ -364,7 +370,7 @@ fun HomeContainer(
                 sellDialogOpen = false
             },
             title = {
-                Text(text = "Sell")
+                Text(text = stringResource(R.string.sell))
             },
             text = {
                 Column(
@@ -383,7 +389,7 @@ fun HomeContainer(
                                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                                 .fillMaxWidth(),
                             label = {
-                                Text(text = "Product")
+                                Text(text = stringResource(R.string.product))
                             },
                             trailingIcon = {
                                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = productExpanded)
@@ -421,7 +427,7 @@ fun HomeContainer(
                         onValueChange = { quantity = it },
                         modifier = Modifier.fillMaxWidth(),
                         label = {
-                            Text(text = "Quantity")
+                            Text(text = stringResource(R.string.quantity))
                         },
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                             keyboardType = KeyboardType.Decimal,
@@ -434,7 +440,7 @@ fun HomeContainer(
                         onValueChange = { currentSellPrice = it },
                         modifier = Modifier.fillMaxWidth(),
                         label = {
-                            Text(text = "Current Sell Price")
+                            Text(text = stringResource(R.string.current_sell_price))
                         },
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                             keyboardType = KeyboardType.Decimal,
@@ -457,14 +463,16 @@ fun HomeContainer(
                                 selectedItem = null
                                 quantity = ""
                                 currentSellPrice = ""
-                                snackbarHostState.showSnackbar("Sell saved")
+                                snackbarHostState.showSnackbar(sellSavedMessage)
+                            } catch (error: AppMessageException) {
+                                snackbarHostState.showSnackbar(resources.getString(error.messageResId))
                             } catch (error: IllegalArgumentException) {
-                                snackbarHostState.showSnackbar(error.message ?: "Invalid sell")
+                                snackbarHostState.showSnackbar(error.message ?: invalidSellMessage)
                             }
                         }
                     },
                 ) {
-                    Text(text = "Save")
+                    Text(text = stringResource(R.string.action_save))
                 }
             },
             dismissButton = {
@@ -473,7 +481,7 @@ fun HomeContainer(
                         sellDialogOpen = false
                     },
                 ) {
-                    Text(text = "Cancel")
+                    Text(text = stringResource(R.string.action_cancel))
                 }
             },
         )
@@ -492,14 +500,14 @@ private fun RecentLedgerSection(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            text = "Recent Ledger",
+            text = stringResource(R.string.recent_ledger),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
 
         if (ledgers.isEmpty()) {
             Text(
-                text = "No ledger entries yet",
+                text = stringResource(R.string.no_ledger_entries_yet),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -516,7 +524,7 @@ private fun RecentLedgerSection(
                         .firstOrNull { item -> item.id == ledger.itemId }
                         ?.name
                         .orEmpty()
-                        .ifBlank { "Unknown Product" }
+                        .ifBlank { stringResource(R.string.unknown_product) }
 
                     RecentLedgerRow(
                         ledger = ledger,
@@ -552,7 +560,7 @@ private fun RecentLedgerRow(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
-                    text = ledger.code.ifBlank { "Ledger ${ledger.id}" },
+                    text = ledger.code.ifBlank { stringResource(R.string.ledger_fallback, ledger.id) },
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -568,7 +576,11 @@ private fun RecentLedgerRow(
             }
 
             Text(
-                text = "${ledger.direction.name}: ${MoneyFormatService.formatCompact(ledger.amount, currency)}",
+                text = stringResource(
+                    R.string.ledger_direction_amount,
+                    ledger.direction.name,
+                    MoneyFormatService.formatCompact(ledger.amount, currency),
+                ),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
@@ -588,7 +600,7 @@ private fun SettingsDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = "Settings")
+            Text(text = stringResource(R.string.settings))
         },
         text = {
             Column(
@@ -596,7 +608,7 @@ private fun SettingsDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    text = "Currency",
+                    text = stringResource(R.string.currency),
                     style = MaterialTheme.typography.titleSmall,
                 )
                 AppCurrency.entries.forEach { currency ->
@@ -605,7 +617,7 @@ private fun SettingsDialog(
                             Text(text = currency.name)
                         },
                         supportingContent = {
-                            Text(text = currency.displayName)
+                            Text(text = stringResource(currency.displayNameRes))
                         },
                         leadingContent = {
                             RadioButton(
@@ -634,7 +646,7 @@ private fun SettingsDialog(
                         modifier = Modifier.size(20.dp),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Clear All Data")
+                    Text(text = stringResource(R.string.clear_all_data))
                 }
 
                 TextButton(
@@ -647,13 +659,13 @@ private fun SettingsDialog(
                         modifier = Modifier.size(20.dp),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = stringResource(com.owl.minerva.stocklab.R.string.privacy_policy))
+                    Text(text = stringResource(R.string.privacy_policy))
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = "Done")
+                Text(text = stringResource(R.string.action_done))
             }
         },
     )

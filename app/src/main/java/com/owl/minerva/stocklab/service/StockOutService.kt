@@ -1,5 +1,6 @@
 package com.owl.minerva.stocklab.service
 
+import com.owl.minerva.stocklab.R
 import com.owl.minerva.stocklab.enums.LedgerDirection
 import com.owl.minerva.stocklab.model.Ledger
 import com.owl.minerva.stocklab.model.StockOut
@@ -20,17 +21,17 @@ class StockOutService(
     suspend fun show(id: Long): StockOut? = stockOutRepository.getById(id)
 
     suspend fun store(stockOut: StockOut): Long {
-        require(stockOut.stockId > 0) { "Stock id is required." }
-        require(stockOut.ledgerId > 0) { "Ledger id is required." }
-        require(stockOut.amount > 0.0) { "Stock out amount must be greater than zero." }
+        requireAppMessage(stockOut.stockId > 0, R.string.error_stock_id_required)
+        requireAppMessage(stockOut.ledgerId > 0, R.string.error_ledger_id_required)
+        requireAppMessage(stockOut.amount > 0.0, R.string.error_stock_out_amount_greater_than_zero)
         return stockOutRepository.insert(stockOut)
     }
 
     suspend fun update(stockOut: StockOut) {
-        require(stockOut.id > 0) { "Stock out id is required for update." }
-        require(stockOut.stockId > 0) { "Stock id is required." }
-        require(stockOut.ledgerId > 0) { "Ledger id is required." }
-        require(stockOut.amount > 0.0) { "Stock out amount must be greater than zero." }
+        requireAppMessage(stockOut.id > 0, R.string.error_stock_out_id_required)
+        requireAppMessage(stockOut.stockId > 0, R.string.error_stock_id_required)
+        requireAppMessage(stockOut.ledgerId > 0, R.string.error_ledger_id_required)
+        requireAppMessage(stockOut.amount > 0.0, R.string.error_stock_out_amount_greater_than_zero)
         stockOutRepository.update(stockOut.copy(updatedAt = System.currentTimeMillis()))
     }
 
@@ -41,19 +42,19 @@ class StockOutService(
         quantity: Double,
         currentSellPrice: Double,
     ): StockOutSellResult {
-        require(itemId > 0) { "Product is required." }
-        require(quantity > 0.0) { "Quantity must be greater than zero." }
-        require(currentSellPrice > 0.0) { "Current sell price must be greater than zero." }
+        requireAppMessage(itemId > 0, R.string.error_product_required)
+        requireAppMessage(quantity > 0.0, R.string.error_quantity_greater_than_zero)
+        requireAppMessage(currentSellPrice > 0.0, R.string.error_current_sell_price_greater_than_zero)
 
         val itemRepository = requireNotNull(itemRepository) { "Item repository is required." }
         val stockRepository = requireNotNull(stockRepository) { "Stock repository is required." }
         val ledgerRepository = requireNotNull(ledgerRepository) { "Ledger repository is required." }
         val item = itemRepository.getById(itemId)
-            ?: throw IllegalArgumentException("Product was not found.")
+            ?: throw AppMessageException(R.string.error_product_not_found_period)
         val itemCode = item.code.ifBlank { RecordCodeGenerator.itemCode(item.name.orEmpty()) }
         val availableStocks = stockRepository.getAvailableByItemId(itemId)
         val availableQuantity = availableStocks.sumOf { stock -> stock.amount }
-        require(availableQuantity >= quantity) { "Not enough stock available." }
+        requireAppMessage(availableQuantity >= quantity, R.string.error_not_enough_stock)
 
         itemRepository.update(
             item.copy(

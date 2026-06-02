@@ -1,5 +1,6 @@
 package com.owl.minerva.stocklab.service
 
+import com.owl.minerva.stocklab.R
 import com.owl.minerva.stocklab.enums.LedgerDirection
 import com.owl.minerva.stocklab.model.*
 import com.owl.minerva.stocklab.repository.*
@@ -26,16 +27,16 @@ class StockBatchService(
         profitTakePercent: Double? = null,
         hppId: Long? = null,
     ): StockBatchStoreResult {
-        require(itemId > 0) { "Item id is required." }
-        require(amount > 0.0) { "Stock amount must be greater than zero." }
+        requireAppMessage(itemId > 0, R.string.error_item_id_required)
+        requireAppMessage(amount > 0.0, R.string.error_stock_amount_greater_than_zero)
         profitTakePercent?.let { percent ->
-            require(percent >= 0.0) { "Profit take cannot be negative." }
+            requireAppMessage(percent >= 0.0, R.string.error_profit_take_negative)
         }
 
         val batchAmount = amount.toLong()
-        require(batchAmount > 0) { "Batch amount must be greater than zero." }
+        requireAppMessage(batchAmount > 0, R.string.error_batch_amount_greater_than_zero)
         val item = itemRepository.getById(itemId)
-            ?: throw IllegalArgumentException("Item was not found.")
+            ?: throw AppMessageException(R.string.error_item_not_found)
         val itemCode = item.code.ifBlank { RecordCodeGenerator.itemCode(item.name.orEmpty()) }
 
         val hppInputComponents = hppComponents?.let { components ->
@@ -83,9 +84,9 @@ class StockBatchService(
             val reusableHpp = when {
                 hppId != null && hppId > 0 -> hppRepository.getById(hppId)
                 else -> hppRepository.getLatestByItemId(itemId)
-            } ?: throw IllegalArgumentException("Reusable HPP template was not found.")
+            } ?: throw AppMessageException(R.string.error_reusable_hpp_template_not_found)
             val reusableComponents = hppComponentRepository.getByHppId(reusableHpp.id)
-            require(reusableComponents.isNotEmpty()) { "Reusable HPP components are required." }
+            requireAppMessage(reusableComponents.isNotEmpty(), R.string.error_reusable_hpp_components_required)
             HppWithComponents(
                 id = reusableHpp.id,
                 components = reusableComponents,
@@ -160,8 +161,8 @@ class StockBatchService(
     }
 
     suspend fun update(stock: Stock) {
-        require(stock.id > 0) { "Stock id is required for update." }
-        require(stock.amount >= 0.0) { "Stock amount cannot be negative." }
+        requireAppMessage(stock.id > 0, R.string.error_stock_id_required)
+        requireAppMessage(stock.amount >= 0.0, R.string.error_stock_amount_negative)
         stockRepository.update(stock.copy(updatedAt = System.currentTimeMillis()))
     }
 
@@ -176,16 +177,16 @@ class StockBatchService(
                 amount = component.amount,
             )
         }
-        require(validComponents.isNotEmpty()) { "At least one HPP component is required." }
+        requireAppMessage(validComponents.isNotEmpty(), R.string.error_at_least_one_hpp_component_required)
         validComponents.forEach { component ->
-            require(component.name.isNotBlank()) { "HPP component name cannot be blank." }
-            require(component.amount >= 0) { "HPP component amount cannot be negative." }
+            requireAppMessage(component.name.isNotBlank(), R.string.error_hpp_component_name_blank)
+            requireAppMessage(component.amount >= 0, R.string.error_hpp_component_amount_negative)
         }
 
         val buyPriceComponent = validComponents.firstOrNull { component ->
             component.name.equals("Buy Price", ignoreCase = true)
-        } ?: throw IllegalArgumentException("Buy price is required.")
-        require(buyPriceComponent.amount > 0) { "Buy price must be greater than zero." }
+        } ?: throw AppMessageException(R.string.error_buy_price_required)
+        requireAppMessage(buyPriceComponent.amount > 0, R.string.error_buy_price_greater_than_zero)
 
         return validComponents
     }

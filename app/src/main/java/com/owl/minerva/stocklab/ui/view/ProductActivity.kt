@@ -18,8 +18,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.owl.minerva.stocklab.R
 import com.owl.minerva.stocklab.database.StockLabDatabase
 import com.owl.minerva.stocklab.enums.AppCurrency
 import com.owl.minerva.stocklab.enums.UnitType
@@ -29,11 +32,11 @@ import com.owl.minerva.stocklab.model.Item
 import com.owl.minerva.stocklab.model.Stock
 import com.owl.minerva.stocklab.repository.*
 import com.owl.minerva.stocklab.service.*
-import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.components.AdMobBanner
 import com.owl.minerva.stocklab.ui.components.MetricText
 import com.owl.minerva.stocklab.ui.components.ProfitBadge
 import com.owl.minerva.stocklab.ui.components.TwoColumnRow
+import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
 
@@ -78,8 +81,11 @@ fun ProductContainer(
     previewProducts: List<ProductCardUiState>? = null,
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val productNotFoundMessage = stringResource(R.string.product_not_found)
+    val productDeletedMessage = stringResource(R.string.product_deleted)
     val selectedCurrency = remember(context) {
         CurrencySettingsStore(context).getCurrency()
     }
@@ -125,6 +131,7 @@ fun ProductContainer(
                 hpps = hpps,
                 batches = batches,
                 currency = selectedCurrency,
+                resources = resources,
             )
         }
     }
@@ -139,7 +146,7 @@ fun ProductContainer(
                 modifier = Modifier.shadow(elevation = 4.dp),
                 title = {
                     Text(
-                        text = "Product",
+                        text = stringResource(R.string.product),
                         style = MaterialTheme.typography.titleLarge,
                     )
                 },
@@ -147,7 +154,7 @@ fun ProductContainer(
                     IconButton(onClick = { (context as? Activity)?.finish() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
@@ -165,7 +172,7 @@ fun ProductContainer(
                     )
                 },
                 text = {
-                    Text(text = "Add Product")
+                    Text(text = stringResource(R.string.add_product))
                 },
             )
         },
@@ -174,7 +181,7 @@ fun ProductContainer(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            contentPadding = PaddingValues(
                 start = 16.dp,
                 top = 16.dp,
                 end = 16.dp,
@@ -207,10 +214,10 @@ fun ProductContainer(
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
             title = {
-                Text(text = "Delete Product")
+                Text(text = stringResource(R.string.delete_product))
             },
             text = {
-                Text(text = "Delete ${product.name}? This action cannot be undone.")
+                Text(text = stringResource(R.string.delete_product_confirm, product.name))
             },
             confirmButton = {
                 TextButton(
@@ -223,20 +230,20 @@ fun ProductContainer(
                         scope.launch {
                             val item = itemService.show(itemId)
                             if (item == null) {
-                                snackbarHostState.showSnackbar("Product was not found")
+                                snackbarHostState.showSnackbar(productNotFoundMessage)
                             } else {
                                 itemService.delete(item)
-                                snackbarHostState.showSnackbar("Product deleted")
+                                snackbarHostState.showSnackbar(productDeletedMessage)
                             }
                         }
                     },
                 ) {
-                    Text(text = "Delete")
+                    Text(text = stringResource(R.string.action_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { deleteTarget = null }) {
-                    Text(text = "Cancel")
+                    Text(text = stringResource(R.string.action_cancel))
                 }
             },
         )
@@ -267,11 +274,11 @@ private fun ProductListCard(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         MetricText(
-                            label = "Product Name",
+                            label = stringResource(R.string.product_name),
                             value = product.name,
                         )
                         Text(
-                            text = "Current Sell Price: ${product.currentSellPrice}",
+                            text = stringResource(R.string.current_sell_price_format, product.currentSellPrice),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -288,7 +295,7 @@ private fun ProductListCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete product",
+                                contentDescription = stringResource(R.string.delete_product_content_description),
                                 tint = MaterialTheme.colorScheme.error,
                             )
                         }
@@ -300,7 +307,7 @@ private fun ProductListCard(
                                 }
                             },
                         ) {
-                            Text(text = "Show")
+                            Text(text = stringResource(R.string.show))
                         }
                     }
                 },
@@ -318,7 +325,7 @@ private fun ProductListCard(
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
-                                text = "Final Price",
+                                text = stringResource(R.string.final_price),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
@@ -335,7 +342,7 @@ private fun ProductListCard(
                             verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             Text(
-                                text = "Profit Take",
+                                text = stringResource(R.string.profit_take),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
@@ -355,7 +362,7 @@ private fun ProductListCard(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text(
-                        text = "Current Active Batch",
+                        text = stringResource(R.string.current_active_batch),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -383,13 +390,13 @@ private fun ProductListCard(
             TwoColumnRow(
                 left = {
                     MetricText(
-                        label = "HPP per Unit",
+                        label = stringResource(R.string.hpp_per_unit),
                         value = product.hppPerUnit,
                     )
                 },
                 right = {
                     MetricText(
-                        label = "Net Income",
+                        label = stringResource(R.string.net_income),
                         value = product.netIncome,
                         horizontalAlignment = Alignment.End,
                     )
@@ -416,6 +423,7 @@ private fun Item.toProductCardUiState(
     hpps: List<Hpp>,
     batches: List<Batch>,
     currency: AppCurrency,
+    resources: android.content.res.Resources,
 ): ProductCardUiState {
     val hppPerUnit = hpps
         .filter { hpp -> hpp.itemId == id }
@@ -438,7 +446,7 @@ private fun Item.toProductCardUiState(
         ?.let { stock -> batches.firstOrNull { batch -> batch.id == stock.batchId } }
         ?.code
         ?.takeIf { code -> code.isNotBlank() }
-        ?: "No active batch"
+        ?: resources.getString(R.string.no_active_batch)
 
     return ProductCardUiState(
         itemId = id,

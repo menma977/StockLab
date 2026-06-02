@@ -19,18 +19,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.owl.minerva.stocklab.R
 import com.owl.minerva.stocklab.database.StockLabDatabase
 import com.owl.minerva.stocklab.enums.UnitType
 import com.owl.minerva.stocklab.model.Item
 import com.owl.minerva.stocklab.repository.*
 import com.owl.minerva.stocklab.service.*
-import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.components.CostAmountField
 import com.owl.minerva.stocklab.ui.components.FormSectionHeader
 import com.owl.minerva.stocklab.ui.components.clearFocusOnTapOutside
+import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
 
@@ -61,8 +64,11 @@ fun ProductStoreContainer(
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val productSavedMessage = stringResource(R.string.product_saved)
+    val invalidProductMessage = stringResource(R.string.error_invalid_product)
     val selectedCurrency = remember(context) {
         CurrencySettingsStore(context).getCurrency()
     }
@@ -121,7 +127,7 @@ fun ProductStoreContainer(
                 modifier = Modifier.shadow(elevation = 4.dp),
                 title = {
                     Text(
-                        text = "Add Product",
+                        text = stringResource(R.string.add_product),
                         style = MaterialTheme.typography.titleLarge,
                     )
                 },
@@ -129,7 +135,7 @@ fun ProductStoreContainer(
                     IconButton(onClick = { (context as? Activity)?.finish() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
@@ -159,10 +165,12 @@ fun ProductStoreContainer(
                                     dynamicCosts = dynamicCosts,
                                 ),
                             )
-                            snackbarHostState.showSnackbar("Product saved")
+                            snackbarHostState.showSnackbar(productSavedMessage)
                             (context as? Activity)?.finish()
+                        } catch (error: AppMessageException) {
+                            snackbarHostState.showSnackbar(resources.getString(error.messageResId))
                         } catch (error: IllegalArgumentException) {
-                            snackbarHostState.showSnackbar(error.message ?: "Invalid product")
+                            snackbarHostState.showSnackbar(error.message ?: invalidProductMessage)
                         }
                     }
                 },
@@ -173,7 +181,7 @@ fun ProductStoreContainer(
                     )
                 },
                 text = {
-                    Text(text = "Save")
+                    Text(text = stringResource(R.string.action_save))
                 },
             )
         },
@@ -186,14 +194,14 @@ fun ProductStoreContainer(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
         ) {
-            FormSectionHeader(title = "General")
+            FormSectionHeader(title = stringResource(R.string.form_general))
 
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = {
-                    Text(text = "Name")
+                    Text(text = stringResource(R.string.name))
                 },
                 singleLine = true,
             )
@@ -205,7 +213,7 @@ fun ProductStoreContainer(
                     .fillMaxWidth()
                     .padding(top = 12.dp),
                 label = {
-                    Text(text = "Initial Stock")
+                    Text(text = stringResource(R.string.initial_stock))
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
@@ -218,7 +226,7 @@ fun ProductStoreContainer(
                     .fillMaxWidth()
                     .padding(top = 12.dp),
                 label = {
-                    Text(text = "Profit Take (%)")
+                    Text(text = stringResource(R.string.profit_take_percent))
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
@@ -228,11 +236,16 @@ fun ProductStoreContainer(
                 onClick = {},
                 modifier = Modifier.padding(top = 12.dp),
                 label = {
-                    Text(text = "Final Sell Price: ${MoneyFormatService.format(finalSellPricePreview, selectedCurrency)}")
+                    Text(
+                        text = stringResource(
+                            R.string.final_sell_price_format,
+                            MoneyFormatService.format(finalSellPricePreview, selectedCurrency),
+                        ),
+                    )
                 },
             )
 
-            FormSectionHeader(title = "Cost Per Unit")
+            FormSectionHeader(title = stringResource(R.string.cost_per_unit))
 
             OutlinedTextField(
                 value = buyPrice,
@@ -241,7 +254,7 @@ fun ProductStoreContainer(
                     .fillMaxWidth()
                     .padding(top = 12.dp),
                 label = {
-                    Text(text = "Buy Price Per Unit")
+                    Text(text = stringResource(R.string.buy_price_per_unit))
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
@@ -250,40 +263,40 @@ fun ProductStoreContainer(
             CostAmountField(
                 value = tax,
                 onValueChange = { tax = it },
-                label = "Tax Per Unit",
+                label = stringResource(R.string.tax_per_unit),
             )
 
             CostAmountField(
                 value = fee,
                 onValueChange = { fee = it },
-                label = "Fee Per Unit",
+                label = stringResource(R.string.fee_per_unit),
             )
 
             CostAmountField(
                 value = packaging,
                 onValueChange = { packaging = it },
-                label = "Packaging Per Unit",
+                label = stringResource(R.string.packaging_per_unit),
             )
 
             CostAmountField(
                 value = handling,
                 onValueChange = { handling = it },
-                label = "Handling Per Unit",
+                label = stringResource(R.string.handling_per_unit),
             )
 
             CostAmountField(
                 value = cargo,
                 onValueChange = { cargo = it },
-                label = "Cargo Per Unit",
+                label = stringResource(R.string.cargo_per_unit),
             )
 
             CostAmountField(
                 value = production,
                 onValueChange = { production = it },
-                label = "Production Per Unit",
+                label = stringResource(R.string.production_per_unit),
             )
 
-            FormSectionHeader(title = "Unit")
+            FormSectionHeader(title = stringResource(R.string.unit))
 
             ExposedDropdownMenuBox(
                 expanded = unitExpanded,
@@ -300,7 +313,7 @@ fun ProductStoreContainer(
                         .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                         .fillMaxWidth(),
                     label = {
-                        Text(text = "Unit")
+                        Text(text = stringResource(R.string.unit))
                     },
                     trailingIcon = {
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded)
@@ -326,7 +339,7 @@ fun ProductStoreContainer(
                 }
             }
 
-            FormSectionHeader(title = "Extra Costs")
+            FormSectionHeader(title = stringResource(R.string.extra_costs))
 
             dynamicCosts.forEachIndexed { index, cost ->
                 Row(
@@ -341,7 +354,7 @@ fun ProductStoreContainer(
                         },
                         modifier = Modifier.weight(1f),
                         label = {
-                            Text(text = "Cost Name")
+                            Text(text = stringResource(R.string.cost_name))
                         },
                         singleLine = true,
                     )
@@ -355,7 +368,7 @@ fun ProductStoreContainer(
                             .weight(1f)
                             .padding(start = 8.dp),
                         label = {
-                            Text(text = "Amount Per Unit")
+                            Text(text = stringResource(R.string.amount_per_unit))
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
@@ -369,7 +382,7 @@ fun ProductStoreContainer(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Remove cost",
+                            contentDescription = stringResource(R.string.remove_cost),
                         )
                     }
                 }
@@ -388,7 +401,7 @@ fun ProductStoreContainer(
                     contentDescription = null,
                 )
                 Text(
-                    text = "Add New Cost",
+                    text = stringResource(R.string.add_new_cost),
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }

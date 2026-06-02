@@ -13,9 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.ads.*
+import com.owl.minerva.stocklab.R
 
 @Composable
 fun AdMobBanner(
@@ -35,7 +37,7 @@ fun AdMobBanner(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "Ad Banner",
+                    text = stringResource(R.string.ad_banner),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

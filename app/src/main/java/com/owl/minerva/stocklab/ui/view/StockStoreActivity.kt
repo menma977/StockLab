@@ -19,16 +19,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.owl.minerva.stocklab.R
 import com.owl.minerva.stocklab.database.StockLabDatabase
 import com.owl.minerva.stocklab.repository.*
 import com.owl.minerva.stocklab.service.*
-import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.components.CostAmountField
 import com.owl.minerva.stocklab.ui.components.FormSectionHeader
 import com.owl.minerva.stocklab.ui.components.clearFocusOnTapOutside
+import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
 import kotlinx.coroutines.launch
 
@@ -66,8 +69,11 @@ fun StockStoreContainer(
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val stockSavedMessage = stringResource(R.string.stock_saved)
+    val invalidStockMessage = stringResource(R.string.error_invalid_stock)
     val selectedCurrency = remember(context) {
         CurrencySettingsStore(context).getCurrency()
     }
@@ -161,13 +167,13 @@ fun StockStoreContainer(
             TopAppBar(
                 modifier = Modifier.shadow(elevation = 4.dp),
                 title = {
-                    Text(text = "Add Stock")
+                    Text(text = stringResource(R.string.add_stock))
                 },
                 navigationIcon = {
                     IconButton(onClick = { (context as? Activity)?.finish() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
@@ -183,7 +189,7 @@ fun StockStoreContainer(
                                     null
                                 } else {
                                     value.toDoubleOrNull()
-                                        ?: throw IllegalArgumentException("Profit take must be a valid number.")
+                                        ?: throw AppMessageException(R.string.error_profit_take_valid_number)
                                 }
                             }
                             stockBatchService.store(
@@ -201,10 +207,12 @@ fun StockStoreContainer(
                                 ),
                                 profitTakePercent = profitTakePercentInput,
                             )
-                            snackbarHostState.showSnackbar("Stock saved")
+                            snackbarHostState.showSnackbar(stockSavedMessage)
                             (context as? Activity)?.finish()
+                        } catch (error: AppMessageException) {
+                            snackbarHostState.showSnackbar(resources.getString(error.messageResId))
                         } catch (error: IllegalArgumentException) {
-                            snackbarHostState.showSnackbar(error.message ?: "Invalid stock")
+                            snackbarHostState.showSnackbar(error.message ?: invalidStockMessage)
                         }
                     }
                 },
@@ -215,7 +223,7 @@ fun StockStoreContainer(
                     )
                 },
                 text = {
-                    Text(text = "Save")
+                    Text(text = stringResource(R.string.action_save))
                 },
             )
         },
@@ -228,14 +236,14 @@ fun StockStoreContainer(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
         ) {
-            FormSectionHeader(title = "Stock")
+            FormSectionHeader(title = stringResource(R.string.stock))
 
             OutlinedTextField(
                 value = productName,
                 onValueChange = {},
                 modifier = Modifier.fillMaxWidth(),
                 label = {
-                    Text(text = "Product")
+                    Text(text = stringResource(R.string.product))
                 },
                 readOnly = true,
                 singleLine = true,
@@ -248,7 +256,7 @@ fun StockStoreContainer(
                     .fillMaxWidth()
                     .padding(top = 12.dp),
                 label = {
-                    Text(text = "Stock Amount")
+                    Text(text = stringResource(R.string.stock_amount))
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
@@ -261,7 +269,7 @@ fun StockStoreContainer(
                     .fillMaxWidth()
                     .padding(top = 12.dp),
                 label = {
-                    Text(text = "Profit Take (%)")
+                    Text(text = stringResource(R.string.profit_take_percent))
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
@@ -271,7 +279,12 @@ fun StockStoreContainer(
                 onClick = {},
                 modifier = Modifier.padding(top = 12.dp),
                 label = {
-                    Text(text = "HPP Per Unit: ${MoneyFormatService.format(currentHppPerUnit.toDouble(), selectedCurrency)}")
+                    Text(
+                        text = stringResource(
+                            R.string.hpp_per_unit_format,
+                            MoneyFormatService.format(currentHppPerUnit.toDouble(), selectedCurrency),
+                        ),
+                    )
                 },
             )
 
@@ -279,55 +292,60 @@ fun StockStoreContainer(
                 onClick = {},
                 modifier = Modifier.padding(top = 8.dp),
                 label = {
-                    Text(text = "Final Sell Price: ${MoneyFormatService.format(finalSellPrice, selectedCurrency)}")
+                    Text(
+                        text = stringResource(
+                            R.string.final_sell_price_format,
+                            MoneyFormatService.format(finalSellPrice, selectedCurrency),
+                        ),
+                    )
                 },
             )
 
-            FormSectionHeader(title = "HPP Costs")
+            FormSectionHeader(title = stringResource(R.string.hpp_costs))
 
             CostAmountField(
                 value = buyPrice,
                 onValueChange = { buyPrice = it },
-                label = "Buy Price Per Unit",
+                label = stringResource(R.string.buy_price_per_unit),
             )
 
             CostAmountField(
                 value = tax,
                 onValueChange = { tax = it },
-                label = "Tax Per Unit",
+                label = stringResource(R.string.tax_per_unit),
             )
 
             CostAmountField(
                 value = fee,
                 onValueChange = { fee = it },
-                label = "Fee Per Unit",
+                label = stringResource(R.string.fee_per_unit),
             )
 
             CostAmountField(
                 value = packaging,
                 onValueChange = { packaging = it },
-                label = "Packaging Per Unit",
+                label = stringResource(R.string.packaging_per_unit),
             )
 
             CostAmountField(
                 value = handling,
                 onValueChange = { handling = it },
-                label = "Handling Per Unit",
+                label = stringResource(R.string.handling_per_unit),
             )
 
             CostAmountField(
                 value = cargo,
                 onValueChange = { cargo = it },
-                label = "Cargo Per Unit",
+                label = stringResource(R.string.cargo_per_unit),
             )
 
             CostAmountField(
                 value = production,
                 onValueChange = { production = it },
-                label = "Production Per Unit",
+                label = stringResource(R.string.production_per_unit),
             )
 
-            FormSectionHeader(title = "Extra Costs")
+            FormSectionHeader(title = stringResource(R.string.extra_costs))
 
             dynamicCosts.forEachIndexed { index, cost ->
                 Row(
@@ -342,7 +360,7 @@ fun StockStoreContainer(
                         },
                         modifier = Modifier.weight(1f),
                         label = {
-                            Text(text = "Cost Name")
+                            Text(text = stringResource(R.string.cost_name))
                         },
                         singleLine = true,
                     )
@@ -356,7 +374,7 @@ fun StockStoreContainer(
                             .weight(1f)
                             .padding(start = 8.dp),
                         label = {
-                            Text(text = "Amount Per Unit")
+                            Text(text = stringResource(R.string.amount_per_unit))
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
@@ -370,7 +388,7 @@ fun StockStoreContainer(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Remove cost",
+                            contentDescription = stringResource(R.string.remove_cost),
                         )
                     }
                 }
@@ -389,7 +407,7 @@ fun StockStoreContainer(
                     contentDescription = null,
                 )
                 Text(
-                    text = "Add New Cost",
+                    text = stringResource(R.string.add_new_cost),
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }

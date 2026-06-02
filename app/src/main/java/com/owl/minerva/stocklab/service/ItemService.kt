@@ -1,5 +1,6 @@
 package com.owl.minerva.stocklab.service
 
+import com.owl.minerva.stocklab.R
 import com.owl.minerva.stocklab.enums.LedgerDirection
 import com.owl.minerva.stocklab.model.*
 import com.owl.minerva.stocklab.repository.*
@@ -25,12 +26,12 @@ class ItemService(
         initialStockAmount: Double,
         hppComponents: List<ItemHppComponentInput>,
     ): ItemStoreResult {
-        require(!item.name.isNullOrBlank()) { "Item name cannot be blank." }
-        require(item.buyPrice > 0.0) { "Buy price must be greater than zero." }
-        require(initialStockAmount > 0.0) { "Initial stock amount must be greater than zero." }
+        requireAppMessage(!item.name.isNullOrBlank(), R.string.error_item_name_blank)
+        requireAppMessage(item.buyPrice > 0.0, R.string.error_buy_price_greater_than_zero)
+        requireAppMessage(initialStockAmount > 0.0, R.string.error_initial_stock_greater_than_zero)
 
         val batchAmount = initialStockAmount.toLong()
-        require(batchAmount > 0) { "Batch amount must be greater than zero." }
+        requireAppMessage(batchAmount > 0, R.string.error_batch_amount_greater_than_zero)
 
         val validComponents = hppComponents.map { component ->
             ItemHppComponentInput(
@@ -38,16 +39,16 @@ class ItemService(
                 amount = component.amount,
             )
         }
-        require(validComponents.isNotEmpty()) { "At least one HPP component is required." }
+        requireAppMessage(validComponents.isNotEmpty(), R.string.error_at_least_one_hpp_component_required)
         validComponents.forEach { component ->
-            require(component.name.isNotBlank()) { "HPP component name cannot be blank." }
-            require(component.amount >= 0) { "HPP component amount cannot be negative." }
+            requireAppMessage(component.name.isNotBlank(), R.string.error_hpp_component_name_blank)
+            requireAppMessage(component.amount >= 0, R.string.error_hpp_component_amount_negative)
         }
 
         val buyPriceComponent = validComponents.firstOrNull { component ->
             component.name.equals("Buy Price", ignoreCase = true)
-        } ?: throw IllegalArgumentException("Buy price is required.")
-        require(buyPriceComponent.amount > 0) { "Buy price must be greater than zero." }
+        } ?: throw AppMessageException(R.string.error_buy_price_required)
+        requireAppMessage(buyPriceComponent.amount > 0, R.string.error_buy_price_greater_than_zero)
 
         val itemCode = generateUniqueItemCode(item.name.orEmpty())
         val reusableHppPerUnit = validComponents.sumOf { component -> component.amount }
@@ -139,13 +140,13 @@ class ItemService(
     }
 
     suspend fun update(item: Item) {
-        require(item.id > 0) { "Item id is required for update." }
-        require(!item.name.isNullOrBlank()) { "Item name cannot be blank." }
+        requireAppMessage(item.id > 0, R.string.error_item_id_required)
+        requireAppMessage(!item.name.isNullOrBlank(), R.string.error_item_name_blank)
         itemRepository.update(item.copy(updatedAt = System.currentTimeMillis()))
     }
 
     suspend fun delete(item: Item) {
-        require(item.id > 0) { "Item id is required for delete." }
+        requireAppMessage(item.id > 0, R.string.error_item_id_required)
 
         stockOutRepository.deleteByItemId(item.id)
         stockInRepository.deleteByItemId(item.id)
