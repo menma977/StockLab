@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -30,6 +29,7 @@ import com.owl.minerva.stocklab.service.AmountFormatService
 import com.owl.minerva.stocklab.service.CurrencySettingsStore
 import com.owl.minerva.stocklab.service.MoneyFormatService
 import com.owl.minerva.stocklab.service.PricingService
+import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.components.AdMobBanner
 import com.owl.minerva.stocklab.ui.components.MetricText
 import com.owl.minerva.stocklab.ui.components.ProfitBadge
@@ -44,7 +44,7 @@ private const val HISTORY_PAGE_SIZE = 5
 class ProductShowActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        setupEdgeToEdge()
         setContent {
             StockLabTheme {
                 ProductShowContainer(
@@ -291,6 +291,7 @@ fun ProductShowContainer(
                     onStockOutPageChange = { stockOutPage = it },
                 )
             } ?: ProductEmptyDetail()
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }

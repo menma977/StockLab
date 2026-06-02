@@ -4,7 +4,6 @@ import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -26,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.owl.minerva.stocklab.database.StockLabDatabase
 import com.owl.minerva.stocklab.repository.*
 import com.owl.minerva.stocklab.service.*
+import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.components.CostAmountField
 import com.owl.minerva.stocklab.ui.components.FormSectionHeader
 import com.owl.minerva.stocklab.ui.components.clearFocusOnTapOutside
@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 class StockStoreActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        setupEdgeToEdge()
         setContent {
             StockLabTheme {
                 StockStoreContainer(
@@ -393,6 +393,8 @@ fun StockStoreContainer(
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }
+
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }

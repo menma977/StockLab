@@ -10,8 +10,6 @@ kotlin = "2.3.21"
 composeBom = "2026.05.01"
 room = "2.8.4"
 ksp = "2.3.2"
-appcompat = "1.7.1"
-material = "1.14.0"
 activity = "1.13.0"
 playServicesAds = "25.3.0"
 
@@ -34,8 +32,6 @@ androidx-compose-material-icons-extended = { group = "androidx.compose.material"
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
 
