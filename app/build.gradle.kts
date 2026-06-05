@@ -16,8 +16,8 @@ android {
         applicationId = "com.owl.minerva.stocklab"
         minSdk = 27
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.1.2"
+        versionCode = 5
+        versionName = "1.1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.activity)
+    implementation(libs.androidx.fragment)
     implementation(libs.play.services.ads)
     ksp(libs.androidx.room.compiler)
     testImplementation(libs.junit)
