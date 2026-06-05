@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.room.withTransaction
 import com.owl.minerva.stocklab.R
 import com.owl.minerva.stocklab.database.StockLabDatabase
 import com.owl.minerva.stocklab.enums.AppCurrency
@@ -38,7 +39,9 @@ import com.owl.minerva.stocklab.ui.components.ProfitBadge
 import com.owl.minerva.stocklab.ui.components.TwoColumnRow
 import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ProductActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,7 +68,8 @@ fun ProductPreview() {
                     currentSellPrice = MoneyFormatService.format(0.0, currency),
                     profitCutPercent = 25,
                     activeBatchCode = "TMBLR4821/B/1",
-                    totalStock = "120 PCS",
+                    activeStock = "120 PCS",
+                    totalStock = "180 PCS",
                     hppPerUnit = MoneyFormatService.format(18_000.0, currency),
                     netIncome = MoneyFormatService.format(7_000.0, currency),
                 ),
@@ -86,10 +90,12 @@ fun ProductContainer(
     val snackbarHostState = remember { SnackbarHostState() }
     val productNotFoundMessage = stringResource(R.string.product_not_found)
     val productDeletedMessage = stringResource(R.string.product_deleted)
+    val unexpectedActionMessage = stringResource(R.string.error_unexpected_action)
     val selectedCurrency = remember(context) {
         CurrencySettingsStore(context).getCurrency()
     }
     var deleteTarget by remember { mutableStateOf<ProductCardUiState?>(null) }
+    var isDeletingProduct by remember { mutableStateOf(false) }
     val database = if (previewProducts == null) {
         remember(context) {
             StockLabDatabase.getInstance(context)
@@ -221,19 +227,38 @@ fun ProductContainer(
             },
             confirmButton = {
                 TextButton(
+                    enabled = !isDeletingProduct,
                     onClick = {
+                        if (isDeletingProduct) {
+                            return@TextButton
+                        }
                         val itemId = product.itemId
+                        val activeDatabase = database
+                        val activeItemService = itemService
                         deleteTarget = null
-                        if (itemId == null || itemService == null) {
+                        if (itemId == null || activeItemService == null || activeDatabase == null) {
                             return@TextButton
                         }
                         scope.launch {
-                            val item = itemService.show(itemId)
-                            if (item == null) {
-                                snackbarHostState.showSnackbar(productNotFoundMessage)
-                            } else {
-                                itemService.delete(item)
-                                snackbarHostState.showSnackbar(productDeletedMessage)
+                            isDeletingProduct = true
+                            try {
+                                val item = withContext(Dispatchers.IO) {
+                                    activeItemService.show(itemId)
+                                }
+                                if (item == null) {
+                                    snackbarHostState.showSnackbar(productNotFoundMessage)
+                                } else {
+                                    withContext(Dispatchers.IO) {
+                                        activeDatabase.withTransaction {
+                                            activeItemService.delete(item)
+                                        }
+                                    }
+                                    snackbarHostState.showSnackbar(productDeletedMessage)
+                                }
+                            } catch (error: Exception) {
+                                snackbarHostState.showSnackbar(unexpectedActionMessage)
+                            } finally {
+                                isDeletingProduct = false
                             }
                         }
                     },
@@ -376,11 +401,16 @@ private fun ProductListCard(
                         },
                         right = {
                             Text(
-                                text = product.totalStock,
+                                text = product.activeStock,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                         },
+                    )
+                    Text(
+                        text = stringResource(R.string.total_stock_format, product.totalStock),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -413,6 +443,7 @@ data class ProductCardUiState(
     val currentSellPrice: String,
     val profitCutPercent: Int,
     val activeBatchCode: String,
+    val activeStock: String,
     val totalStock: String,
     val hppPerUnit: String,
     val netIncome: String,
@@ -442,6 +473,7 @@ private fun Item.toProductCardUiState(
         .filter { stock -> stock.amount > 0.0 }
         .minByOrNull { stock -> stock.id }
     val activeBatchStock = activeStock?.amount ?: 0.0
+    val totalStock = itemStocks.sumOf { stock -> stock.amount }
     val activeBatchCode = activeStock
         ?.let { stock -> batches.firstOrNull { batch -> batch.id == stock.batchId } }
         ?.code
@@ -455,7 +487,8 @@ private fun Item.toProductCardUiState(
         currentSellPrice = MoneyFormatService.format(currentSellPrice, currency),
         profitCutPercent = profitCutPercent,
         activeBatchCode = activeBatchCode,
-        totalStock = "${AmountFormatService.format(activeBatchStock)} ${unit.label()}",
+        activeStock = "${AmountFormatService.format(activeBatchStock)} ${unit.label()}",
+        totalStock = "${AmountFormatService.format(totalStock)} ${unit.label()}",
         hppPerUnit = MoneyFormatService.format(hppPerUnit, currency),
         netIncome = MoneyFormatService.format(net, currency),
     )

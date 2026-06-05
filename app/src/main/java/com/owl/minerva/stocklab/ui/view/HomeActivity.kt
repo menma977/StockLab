@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
 import androidx.core.net.toUri
+import androidx.room.withTransaction
 import com.owl.minerva.stocklab.MainActivity
 import com.owl.minerva.stocklab.R
 import com.owl.minerva.stocklab.database.StockLabDatabase
@@ -47,7 +48,9 @@ import com.owl.minerva.stocklab.ui.components.ProfitMiniChart
 import com.owl.minerva.stocklab.ui.components.clearFocusOnTapOutside
 import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -104,6 +107,8 @@ fun HomeContainer(
     var productExpanded by remember { mutableStateOf(false) }
     var quantity by remember { mutableStateOf("") }
     var currentSellPrice by remember { mutableStateOf("") }
+    var isClearingData by remember { mutableStateOf(false) }
+    var isSelling by remember { mutableStateOf(false) }
     val items by database.itemDao().getAll().collectAsState(initial = emptyList())
     val stockOutService = remember(database) {
         StockOutService(
@@ -303,6 +308,7 @@ fun HomeContainer(
     val privacyPolicyUrl = stringResource(R.string.privacy_policy_url)
     val sellSavedMessage = stringResource(R.string.sell_saved)
     val invalidSellMessage = stringResource(R.string.error_invalid_sell)
+    val unexpectedActionMessage = stringResource(R.string.error_unexpected_action)
 
     if (settingsDialogOpen) {
         SettingsDialog(
@@ -316,7 +322,13 @@ fun HomeContainer(
             },
             onPrivacyPolicy = {
                 val browserIntent = Intent(Intent.ACTION_VIEW, privacyPolicyUrl.toUri())
-                context.startActivity(browserIntent)
+                runCatching {
+                    context.startActivity(browserIntent)
+                }.onFailure {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(unexpectedActionMessage)
+                    }
+                }
             },
             onDismiss = {
                 settingsDialogOpen = false
@@ -335,18 +347,31 @@ fun HomeContainer(
             },
             confirmButton = {
                 TextButton(
+                    enabled = !isClearingData,
                     onClick = {
+                        if (isClearingData) {
+                            return@TextButton
+                        }
                         clearDataConfirmOpen = false
                         scope.launch {
-                            database.clearAllTables()
-                            context.getSharedPreferences("stock_lab_settings", Context.MODE_PRIVATE)
-                                .edit {
-                                    clear()
+                            isClearingData = true
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    database.clearAllTables()
+                                    context.getSharedPreferences("stock_lab_settings", Context.MODE_PRIVATE)
+                                        .edit {
+                                            clear()
+                                        }
                                 }
-                            val restartIntent = Intent(context, MainActivity::class.java).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                val restartIntent = Intent(context, MainActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                }
+                                context.startActivity(restartIntent)
+                            } catch (error: Exception) {
+                                snackbarHostState.showSnackbar(unexpectedActionMessage)
+                            } finally {
+                                isClearingData = false
                             }
-                            context.startActivity(restartIntent)
                         }
                     },
                     colors = ButtonDefaults.textButtonColors(
@@ -451,14 +476,23 @@ fun HomeContainer(
             },
             confirmButton = {
                 TextButton(
+                    enabled = !isSelling,
                     onClick = {
+                        if (isSelling) {
+                            return@TextButton
+                        }
                         scope.launch {
+                            isSelling = true
                             try {
-                                stockOutService.sell(
-                                    itemId = selectedItem?.id ?: 0L,
-                                    quantity = quantity.toDoubleOrNull() ?: 0.0,
-                                    currentSellPrice = currentSellPrice.toDoubleOrNull() ?: 0.0,
-                                )
+                                withContext(Dispatchers.IO) {
+                                    database.withTransaction {
+                                        stockOutService.sell(
+                                            itemId = selectedItem?.id ?: 0L,
+                                            quantity = quantity.toDoubleOrNull() ?: 0.0,
+                                            currentSellPrice = currentSellPrice.toDoubleOrNull() ?: 0.0,
+                                        )
+                                    }
+                                }
                                 sellDialogOpen = false
                                 selectedItem = null
                                 quantity = ""
@@ -468,6 +502,10 @@ fun HomeContainer(
                                 snackbarHostState.showSnackbar(resources.getString(error.messageResId))
                             } catch (error: IllegalArgumentException) {
                                 snackbarHostState.showSnackbar(error.message ?: invalidSellMessage)
+                            } catch (error: Exception) {
+                                snackbarHostState.showSnackbar(unexpectedActionMessage)
+                            } finally {
+                                isSelling = false
                             }
                         }
                     },

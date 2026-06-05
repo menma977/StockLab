@@ -27,6 +27,9 @@ interface StockDao {
     @Query("SELECT * FROM stock WHERE itemId = :itemId AND amount > 0 ORDER BY id ASC")
     suspend fun getAvailableByItemId(itemId: Long): List<Stock>
 
+    @Query("SELECT * FROM stock WHERE itemId = :itemId AND amount > 0 ORDER BY id ASC LIMIT 1")
+    suspend fun getFirstAvailableByItemId(itemId: Long): Stock?
+
     @Query("DELETE FROM stock WHERE itemId = :itemId")
     suspend fun deleteByItemId(itemId: Long)
 

@@ -9,6 +9,7 @@ import com.owl.minerva.stocklab.repository.LedgerRepository
 import com.owl.minerva.stocklab.repository.StockOutRepository
 import com.owl.minerva.stocklab.repository.StockRepository
 import kotlinx.coroutines.flow.Flow
+import kotlin.math.roundToLong
 
 class StockOutService(
     private val stockOutRepository: StockOutRepository,
@@ -73,7 +74,7 @@ class StockOutService(
             }
 
             val soldQuantity = minOf(stock.amount, remainingQuantity)
-            val revenue = (soldQuantity * currentSellPrice).toLong()
+            val revenue = (soldQuantity * currentSellPrice).roundToLong()
             stockRepository.update(
                 stock.copy(
                     amount = stock.amount - soldQuantity,

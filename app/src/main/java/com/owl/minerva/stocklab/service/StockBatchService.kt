@@ -5,6 +5,7 @@ import com.owl.minerva.stocklab.enums.LedgerDirection
 import com.owl.minerva.stocklab.model.*
 import com.owl.minerva.stocklab.repository.*
 import kotlinx.coroutines.flow.Flow
+import kotlin.math.roundToLong
 
 class StockBatchService(
     private val itemRepository: ItemRepository,
@@ -33,8 +34,8 @@ class StockBatchService(
             requireAppMessage(percent >= 0.0, R.string.error_profit_take_negative)
         }
 
-        val batchAmount = amount.toLong()
-        requireAppMessage(batchAmount > 0, R.string.error_batch_amount_greater_than_zero)
+        val batchAmount = amount
+        requireAppMessage(batchAmount > 0.0, R.string.error_batch_amount_greater_than_zero)
         val item = itemRepository.getById(itemId)
             ?: throw AppMessageException(R.string.error_item_not_found)
         val itemCode = item.code.ifBlank { RecordCodeGenerator.itemCode(item.name.orEmpty()) }
@@ -47,7 +48,7 @@ class StockBatchService(
             val hppIdFromInput = hppRepository.insert(
                 Hpp(
                     itemId = itemId,
-                    total = hppPerUnit * batchAmount,
+                    total = calculateTotalCost(hppPerUnit, batchAmount),
                     amount = hppPerUnit,
                 ),
             )
@@ -115,9 +116,9 @@ class StockBatchService(
             batchCostRepository.insert(batchCost)
         }
         val batchTotalHpp = batchSnapshotComponents.sumOf { it.amount }
-        val batchTotalCost = batchTotalHpp * batchAmount
+        val batchTotalCost = calculateTotalCost(batchTotalHpp, batchAmount)
         val insertedBatch = batchRepository.getById(batchId)
-            ?: error("Created batch was not found.")
+            ?: throw AppMessageException(R.string.error_unexpected_action)
         batchRepository.update(
             insertedBatch.copy(
                 totalHpp = batchTotalCost,
@@ -167,6 +168,13 @@ class StockBatchService(
     }
 
     suspend fun delete(stock: Stock) = stockRepository.delete(stock)
+
+    private fun calculateTotalCost(
+        hppPerUnit: Long,
+        quantity: Double,
+    ): Long {
+        return (hppPerUnit * quantity).roundToLong()
+    }
 
     private fun validateHppComponents(
         hppComponents: List<ItemHppComponentInput>,

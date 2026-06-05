@@ -10,8 +10,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -46,32 +49,41 @@ fun AdMobBanner(
         return
     }
 
+    val context = LocalContext.current
+    val adView = remember(context) {
+        AdView(context).apply {
+            setAdSize(AdSize.BANNER)
+            adUnitId = BANNER_AD_UNIT_ID
+            if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+                adListener = object : AdListener() {
+                    override fun onAdLoaded() {
+                        Log.d(TAG, "Banner loaded for adUnitId=$adUnitId")
+                    }
+
+                    override fun onAdFailedToLoad(adError: LoadAdError) {
+                        Log.e(
+                            TAG,
+                            "Banner failed to load: code=${adError.code}, domain=${adError.domain}, " +
+                                    "message=${adError.message}, responseInfo=${adError.responseInfo}",
+                        )
+                    }
+                }
+            }
+            loadAd(AdRequest.Builder().build())
+        }
+    }
+
+    DisposableEffect(adView) {
+        onDispose {
+            adView.destroy()
+        }
+    }
+
     AndroidView(
         modifier = modifier
             .fillMaxWidth()
             .height(50.dp),
-        factory = { context ->
-            AdView(context).apply {
-                setAdSize(AdSize.BANNER)
-                adUnitId = BANNER_AD_UNIT_ID
-                if (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
-                    adListener = object : AdListener() {
-                        override fun onAdLoaded() {
-                            Log.d(TAG, "Banner loaded for adUnitId=$adUnitId")
-                        }
-
-                        override fun onAdFailedToLoad(adError: LoadAdError) {
-                            Log.e(
-                                TAG,
-                                "Banner failed to load: code=${adError.code}, domain=${adError.domain}, " +
-                                        "message=${adError.message}, responseInfo=${adError.responseInfo}",
-                            )
-                        }
-                    }
-                }
-                loadAd(AdRequest.Builder().build())
-            }
-        },
+        factory = { adView },
     )
 }
 

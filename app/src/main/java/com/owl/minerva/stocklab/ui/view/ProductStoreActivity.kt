@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
@@ -24,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.room.withTransaction
 import com.owl.minerva.stocklab.R
 import com.owl.minerva.stocklab.database.StockLabDatabase
 import com.owl.minerva.stocklab.enums.UnitType
@@ -35,7 +37,9 @@ import com.owl.minerva.stocklab.ui.components.FormSectionHeader
 import com.owl.minerva.stocklab.ui.components.clearFocusOnTapOutside
 import com.owl.minerva.stocklab.ui.setupEdgeToEdge
 import com.owl.minerva.stocklab.ui.theme.StockLabTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ProductStoreActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,11 +73,14 @@ fun ProductStoreContainer(
     val snackbarHostState = remember { SnackbarHostState() }
     val productSavedMessage = stringResource(R.string.product_saved)
     val invalidProductMessage = stringResource(R.string.error_invalid_product)
+    val unexpectedActionMessage = stringResource(R.string.error_unexpected_action)
     val selectedCurrency = remember(context) {
         CurrencySettingsStore(context).getCurrency()
     }
-    val itemService = remember(context) {
-        val database = StockLabDatabase.getInstance(context)
+    val database = remember(context) {
+        StockLabDatabase.getInstance(context)
+    }
+    val itemService = remember(database) {
         ItemService(
             itemRepository = ItemRepositoryImpl(database.itemDao()),
             hppRepository = HppRepositoryImpl(database.hppDao()),
@@ -100,6 +107,7 @@ fun ProductStoreContainer(
     var unit by remember { mutableStateOf(UnitType.PCS) }
     var unitExpanded by remember { mutableStateOf(false) }
     var nextDynamicCostId by remember { mutableIntStateOf(0) }
+    var isSavingProduct by remember { mutableStateOf(false) }
     val dynamicCosts = remember { mutableStateListOf<HppCostInput>() }
     val currentHppPerUnit = HppCostService.calculateHppPerUnit(
         buyPrice = buyPrice,
@@ -144,33 +152,42 @@ fun ProductStoreContainer(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = {
-                    scope.launch {
+                    if (!isSavingProduct) scope.launch {
+                        isSavingProduct = true
                         try {
-                            itemService.store(
-                                item = Item(
-                                    name = name.trim(),
-                                    buyPrice = buyPrice.toDoubleOrNull() ?: 0.0,
-                                    profitTakePercent = profitTakePercentValue,
-                                    unit = unit,
-                                ),
-                                initialStockAmount = initialStock.toDoubleOrNull() ?: 0.0,
-                                hppComponents = HppCostService.buildComponents(
-                                    buyPrice = buyPrice,
-                                    tax = tax,
-                                    fee = fee,
-                                    packaging = packaging,
-                                    handling = handling,
-                                    cargo = cargo,
-                                    production = production,
-                                    dynamicCosts = dynamicCosts,
-                                ),
-                            )
+                            withContext(Dispatchers.IO) {
+                                database.withTransaction {
+                                    itemService.store(
+                                        item = Item(
+                                            name = name.trim(),
+                                            buyPrice = buyPrice.toDoubleOrNull() ?: 0.0,
+                                            profitTakePercent = profitTakePercentValue,
+                                            unit = unit,
+                                        ),
+                                        initialStockAmount = initialStock.toDoubleOrNull() ?: 0.0,
+                                        hppComponents = HppCostService.buildComponents(
+                                            buyPrice = buyPrice,
+                                            tax = tax,
+                                            fee = fee,
+                                            packaging = packaging,
+                                            handling = handling,
+                                            cargo = cargo,
+                                            production = production,
+                                            dynamicCosts = dynamicCosts,
+                                        ),
+                                    )
+                                }
+                            }
                             snackbarHostState.showSnackbar(productSavedMessage)
                             (context as? Activity)?.finish()
                         } catch (error: AppMessageException) {
                             snackbarHostState.showSnackbar(resources.getString(error.messageResId))
                         } catch (error: IllegalArgumentException) {
                             snackbarHostState.showSnackbar(error.message ?: invalidProductMessage)
+                        } catch (error: Exception) {
+                            snackbarHostState.showSnackbar(unexpectedActionMessage)
+                        } finally {
+                            isSavingProduct = false
                         }
                     }
                 },
@@ -350,7 +367,9 @@ fun ProductStoreContainer(
                     OutlinedTextField(
                         value = cost.name,
                         onValueChange = { value ->
-                            dynamicCosts[index] = cost.copy(name = value)
+                            dynamicCosts.updateById(cost.id) { current ->
+                                current.copy(name = value)
+                            }
                         },
                         modifier = Modifier.weight(1f),
                         label = {
@@ -362,7 +381,9 @@ fun ProductStoreContainer(
                     OutlinedTextField(
                         value = cost.amount,
                         onValueChange = { value ->
-                            dynamicCosts[index] = cost.copy(amount = value)
+                            dynamicCosts.updateById(cost.id) { current ->
+                                current.copy(amount = value)
+                            }
                         },
                         modifier = Modifier
                             .weight(1f)
@@ -375,7 +396,9 @@ fun ProductStoreContainer(
                     )
 
                     IconButton(
-                        onClick = { dynamicCosts.removeAt(index) },
+                        onClick = {
+                            dynamicCosts.removeAll { current -> current.id == cost.id }
+                        },
                         modifier = Modifier
                             .padding(start = 4.dp)
                             .width(48.dp),
@@ -408,5 +431,15 @@ fun ProductStoreContainer(
 
             Spacer(modifier = Modifier.height(80.dp))
         }
+    }
+}
+
+private fun SnapshotStateList<HppCostInput>.updateById(
+    id: Int,
+    transform: (HppCostInput) -> HppCostInput,
+) {
+    val currentIndex = indexOfFirst { cost -> cost.id == id }
+    if (currentIndex >= 0) {
+        this[currentIndex] = transform(this[currentIndex])
     }
 }

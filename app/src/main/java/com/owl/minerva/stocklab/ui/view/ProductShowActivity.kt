@@ -173,10 +173,7 @@ fun ProductShowContainer(
             val database = StockLabDatabase.getInstance(context)
             val item = database.itemDao().getById(itemId)
             val hpp = database.hppDao().getLatestByItemId(itemId)
-            val stocks = database.stockDao().getAllSnapshot()
-            val activeStock = stocks
-                .filter { stock -> stock.itemId == itemId && stock.amount > 0.0 }
-                .minByOrNull { stock -> stock.id }
+            val activeStock = database.stockDao().getFirstAvailableByItemId(itemId)
             val templateCosts = hpp?.let { hppData ->
                 database.hppComponentDao().getByHppId(hppData.id)
             }.orEmpty()
@@ -620,7 +617,7 @@ private fun Item.toProductShowUiState(
                     title = batch.code.ifBlank { resources.getString(R.string.batch_fallback, batch.id) },
                     description = resources.getString(
                         R.string.stock_description,
-                        AmountFormatService.format(batch.amount.toDouble()),
+                        AmountFormatService.format(batch.amount),
                         unit.name,
                         formatTimestamp(batch.createdAt),
                     ),

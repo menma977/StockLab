@@ -110,6 +110,7 @@
     <string name="stock_saved">Stock saved</string>
     <string name="tax_per_unit">Tax Per Unit</string>
     <string name="total_hpp_format">Total HPP: %1$s</string>
+    <string name="total_stock_format">Total Stock: %1$s</string>
     <string name="unit">Unit</string>
     <string name="unknown_product">Unknown Product</string>
     <string name="welcome_back">Welcome Back</string>
@@ -126,6 +127,7 @@
     <string name="error_invalid_product">Invalid product</string>
     <string name="error_invalid_sell">Invalid sell</string>
     <string name="error_invalid_stock">Invalid stock</string>
+    <string name="error_unexpected_action">Something went wrong. Please try again.</string>
     <string name="error_item_id_required">Item id is required.</string>
     <string name="error_item_name_blank">Item name cannot be blank.</string>
     <string name="error_item_not_found">Item was not found.</string>

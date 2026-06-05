@@ -10,7 +10,7 @@ data class Batch(
     var code: String = "",
     var itemId: Long,
     var hppId: Long,
-    var amount: Long,
+    var amount: Double,
     var totalHpp: Long,
     var totalCost: Long,
     var createdAt: Long = System.currentTimeMillis(),

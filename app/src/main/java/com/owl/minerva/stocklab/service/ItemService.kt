@@ -5,6 +5,7 @@ import com.owl.minerva.stocklab.enums.LedgerDirection
 import com.owl.minerva.stocklab.model.*
 import com.owl.minerva.stocklab.repository.*
 import kotlinx.coroutines.flow.Flow
+import kotlin.math.roundToLong
 
 class ItemService(
     private val itemRepository: ItemRepository,
@@ -30,8 +31,8 @@ class ItemService(
         requireAppMessage(item.buyPrice > 0.0, R.string.error_buy_price_greater_than_zero)
         requireAppMessage(initialStockAmount > 0.0, R.string.error_initial_stock_greater_than_zero)
 
-        val batchAmount = initialStockAmount.toLong()
-        requireAppMessage(batchAmount > 0, R.string.error_batch_amount_greater_than_zero)
+        val batchAmount = initialStockAmount
+        requireAppMessage(batchAmount > 0.0, R.string.error_batch_amount_greater_than_zero)
 
         val validComponents = hppComponents.map { component ->
             ItemHppComponentInput(
@@ -52,7 +53,7 @@ class ItemService(
 
         val itemCode = generateUniqueItemCode(item.name.orEmpty())
         val reusableHppPerUnit = validComponents.sumOf { component -> component.amount }
-        val reusableTotalHpp = reusableHppPerUnit * batchAmount
+        val reusableTotalHpp = calculateTotalCost(reusableHppPerUnit, batchAmount)
         val itemId = itemRepository.insert(item.copy(code = itemCode))
         val hppId = hppRepository.insert(
             Hpp(
@@ -93,7 +94,7 @@ class ItemService(
         }
         val batchTotalHpp = reusableTotalHpp
         val insertedBatch = batchRepository.getById(batchId)
-            ?: error("Created batch was not found.")
+            ?: throw AppMessageException(R.string.error_unexpected_action)
         batchRepository.update(
             insertedBatch.copy(
                 totalHpp = batchTotalHpp,
@@ -159,6 +160,13 @@ class ItemService(
         itemRepository.delete(item)
     }
 
+    private fun calculateTotalCost(
+        hppPerUnit: Long,
+        quantity: Double,
+    ): Long {
+        return (hppPerUnit * quantity).roundToLong()
+    }
+
     private suspend fun generateUniqueItemCode(name: String): String {
         repeat(10) {
             val code = RecordCodeGenerator.itemCode(name)
@@ -167,7 +175,7 @@ class ItemService(
             }
         }
 
-        error("Unable to generate a unique item code.")
+        throw AppMessageException(R.string.error_unexpected_action)
     }
 }
 
